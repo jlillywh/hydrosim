@@ -1,0 +1,114 @@
+# Complex HydroSim Network Configuration Example
+#
+# This example demonstrates a more complex water network with:
+# - Multiple storage nodes with active drawdown
+# - Source nodes with different generation strategies
+# - Multiple demand types (municipal and agricultural)
+# - Links with controls and hydraulic models
+#
+# Storage nodes demonstrate:
+# - Independent drawdown and refill operations
+# - Capacity constraints (max_storage and min_storage)
+# - Automatic prioritization: demands > storage > spilling
+
+climate:
+  source_type: timeseries
+  filepath: climate_data.csv
+  site:
+    latitude: 45.0
+    elevation: 1000.0
+
+nodes:
+  # Upstream reservoir with catchment inflow
+  upstream_reservoir:
+    type: storage
+    initial_storage: 250000.0  # Increased to ensure feasibility
+    max_storage: 500000.0      # m³ (maximum capacity)
+    min_storage: 0.0           # m³ (dead pool)
+    eav_table:
+      elevations: [200.0, 210.0, 220.0, 230.0, 240.0]
+      areas: [5000.0, 8000.0, 12000.0, 16000.0, 20000.0]
+      volumes: [0.0, 50000.0, 150000.0, 300000.0, 500000.0]
+  
+  # Catchment inflow (time series)
+  catchment:
+    type: source
+    strategy: timeseries
+    filepath: inflow_data.csv
+    column: inflow
+  
+  # Junction for flow routing
+  junction1:
+    type: junction
+  
+  # Downstream reservoir
+  downstream_reservoir:
+    type: storage
+    initial_storage: 80000.0  # Increased to ensure feasibility
+    max_storage: 120000.0     # m³ (maximum capacity)
+    min_storage: 0.0          # m³ (dead pool)
+    eav_table:
+      elevations: [100.0, 110.0, 120.0, 130.0]
+      areas: [2000.0, 4000.0, 6000.0, 8000.0]
+      volumes: [0.0, 20000.0, 60000.0, 120000.0]
+  
+  # Municipal demand
+  city:
+    type: demand
+    demand_type: municipal
+    population: 2000.0      # Reduced to make network feasible
+    per_capita_demand: 0.2
+  
+  # Agricultural demand
+  farm:
+    type: demand
+    demand_type: agriculture
+    area: 20000.0           # Reduced to make network feasible
+    crop_coefficient: 0.8
+
+links:
+  # Catchment to upstream reservoir
+  catchment_to_upstream:
+    source: catchment
+    target: upstream_reservoir
+    capacity: 10000.0
+    cost: 0.0
+  
+  # Upstream reservoir to junction (with weir)
+  upstream_to_junction:
+    source: upstream_reservoir
+    target: junction1
+    capacity: 5000.0
+    cost: 1.0
+    hydraulic:
+      type: weir
+      coefficient: 1.5
+      length: 10.0
+      crest_elevation: 205.0
+  
+  # Junction to downstream reservoir
+  junction_to_downstream:
+    source: junction1
+    target: downstream_reservoir
+    capacity: 5000.0
+    cost: 1.0
+  
+  # Downstream to city (with fractional control)
+  downstream_to_city:
+    source: downstream_reservoir
+    target: city
+    capacity: 3000.0
+    # cost: -1000.0  # COST_DEMAND (auto-assigned for demand links)
+    control:
+      type: fractional
+      fraction: 0.8  # Throttle to 80% capacity
+  
+  # Downstream to farm (with absolute control)
+  downstream_to_farm:
+    source: downstream_reservoir
+    target: farm
+    capacity: 5000.0
+    # cost: -1000.0  # COST_DEMAND (auto-assigned for demand links)
+    control:
+      type: absolute
+      max_flow: 2000.0  # Hard cap at 2000 m³/day

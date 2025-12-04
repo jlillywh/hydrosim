@@ -1,0 +1,59 @@
+# Simple HydroSim Network Configuration Example
+#
+# This example demonstrates a basic water network with:
+# - A reservoir (storage node) with active drawdown capability
+# - A municipal demand
+# - Time series climate data
+#
+# The storage node will automatically:
+# - Draw down to meet demand when inflow is insufficient
+# - Refill when inflow exceeds demand
+# - Respect capacity constraints (max_storage and min_storage)
+
+climate:
+  source_type: timeseries
+  filepath: climate_data.csv  # Path to climate CSV file
+  site:
+    latitude: 45.0    # degrees
+    elevation: 1000.0 # meters
+
+nodes:
+  # Source node (catchment inflow)
+  catchment:
+    type: source
+    strategy: timeseries
+    filepath: inflow_data.csv
+    column: inflow
+  
+  # Storage reservoir
+  reservoir:
+    type: storage
+    initial_storage: 50000.0  # m³
+    max_storage: 60000.0      # m³ (maximum capacity)
+    min_storage: 0.0          # m³ (dead pool)
+    eav_table:
+      elevations: [100.0, 110.0, 120.0, 130.0]  # meters
+      areas: [1000.0, 2000.0, 3000.0, 4000.0]   # m²
+      volumes: [0.0, 10000.0, 30000.0, 60000.0] # m³
+  
+  # Municipal demand
+  city:
+    type: demand
+    demand_type: municipal
+    population: 10000.0        # people
+    per_capita_demand: 0.2     # m³/person/day
+
+links:
+  # Connection from catchment to reservoir
+  catchment_to_reservoir:
+    source: catchment
+    target: reservoir
+    capacity: 10000.0  # m³/day
+    cost: 0.0          # no cost for natural inflow
+  
+  # Connection from reservoir to city
+  reservoir_to_city:
+    source: reservoir
+    target: city
+    capacity: 5000.0  # m³/day
+    # cost: -1000.0   # COST_DEMAND (auto-assigned for demand links, can be omitted)

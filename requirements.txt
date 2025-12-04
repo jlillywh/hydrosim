@@ -1,0 +1,17 @@
+# Core scientific computing
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# Network analysis
+networkx>=3.0
+
+# Configuration parsing
+pyyaml>=6.0
+
+# Testing frameworks
+pytest>=7.4.0
+hypothesis>=6.82.0
+
+# Development tools
+pytest-cov>=4.1.0
