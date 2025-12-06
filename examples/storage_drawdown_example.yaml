@@ -10,6 +10,62 @@
 # The virtual link architecture automatically handles these operations
 # by treating final storage as a decision variable in the optimization.
 
+model_name: "Storage Drawdown Example Configuration"
+author: "Jason Lillywhite"
+
+visualization:
+  # Network map configuration
+  network_map:
+    width: 400
+    height: 600
+    layout: hierarchical  # Options: 'hierarchical', 'circular'
+    output_file: "network_topology.html"
+  
+  # Time series plots configuration
+  plots:
+    # Climate plot
+    - type: climate
+      title: "Climate Conditions"
+      y1_axis:
+        label: "Precipitation (mm/day)"
+        variables: [precip]
+      y2_axis:
+        label: "Temperature (°C)"
+        variables: [tmax, tmin]
+    
+    # Source/catchment runoff (auto-generates for all source nodes)
+    - type: source
+      auto: true
+      title_template: "{node_id} Runoff"
+      y1_axis:
+        label: "Runoff (m³/day)"
+        variables: [inflow]
+    
+    # Reservoir plots (auto-generates for all storage nodes)
+    - type: reservoir
+      auto: true
+      title_template: "{node_id} Operations"
+      y1_axis:
+        label: "Storage (m³)"
+        variables: [storage]
+      y2_axis:
+        label: "Flow (m³/day)"
+        variables: [inflow, outflow, evap_loss, spill]
+    
+    # Demand plots (auto-generates for all demand nodes)
+    - type: demand
+      auto: true
+      title_template: "{node_id} Supply vs Demand"
+      y1_axis:
+        label: "Flow (m³/day)"
+        variables: [request, delivered, deficit]
+  
+  # Layout settings
+  layout:
+    width: 1200
+    height: 400
+    output_file: "simulation_results.html"
+
 climate:
   source_type: timeseries
   filepath: climate_data.csv

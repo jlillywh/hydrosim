@@ -3,11 +3,15 @@ numpy>=1.24.0
 pandas>=2.0.0
 scipy>=1.10.0
 
-# Network analysis
+# Network analysis and visualization
 networkx>=3.0
+plotly>=5.0.0
 
 # Configuration parsing
 pyyaml>=6.0
+
+# HTTP requests for GHCN data fetching
+requests>=2.25.0
 
 # Testing frameworks
 pytest>=7.4.0

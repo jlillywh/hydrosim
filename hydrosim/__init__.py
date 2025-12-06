@@ -5,7 +5,7 @@ This package provides tools for daily timestep simulation of complex,
 interconnected water systems.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from hydrosim.climate import ClimateState, SiteConfig
 from hydrosim.config import ElevationAreaVolume, NetworkGraph, YAMLParser
@@ -29,6 +29,8 @@ from hydrosim.hydraulics import HydraulicModel, WeirModel, PipeModel
 from hydrosim.solver import NetworkSolver, LinearProgrammingSolver, COST_DEMAND, COST_STORAGE, COST_SPILL
 from hydrosim.simulation import SimulationEngine
 from hydrosim.results import ResultsWriter
+from hydrosim.visualization import visualize_network, save_network_visualization
+from hydrosim.results_viz import ResultsVisualizer, visualize_results
 from hydrosim.exceptions import (
     HydroSimError,
     NegativeStorageError,
@@ -76,6 +78,10 @@ __all__ = [
     'LinearProgrammingSolver',
     'SimulationEngine',
     'ResultsWriter',
+    'visualize_network',
+    'save_network_visualization',
+    'ResultsVisualizer',
+    'visualize_results',
     'HydroSimError',
     'NegativeStorageError',
     'InfeasibleNetworkError',

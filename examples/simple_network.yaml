@@ -10,6 +10,62 @@
 # - Refill when inflow exceeds demand
 # - Respect capacity constraints (max_storage and min_storage)
 
+model_name: "Simple Water Network Example"
+author: "HydroSim Team"
+
+visualization:
+  # Network map configuration
+  network_map:
+    width: 600
+    height: 1200
+    layout: hierarchical
+    output_file: "simple_network_topology.html"
+  
+  # Time series plots configuration
+  plots:
+    # Climate plot
+    - type: climate
+      title: "Climate Conditions"
+      y1_axis:
+        label: "Precipitation (mm/day)"
+        variables: [precip]
+      y2_axis:
+        label: "Temperature (°C)"
+        variables: [tmax, tmin]
+    
+    # Source/catchment runoff
+    - type: source
+      auto: true
+      title_template: "{node_id} Runoff"
+      y1_axis:
+        label: "Runoff (m³/day)"
+        variables: [inflow]
+    
+    # Reservoir operations
+    - type: reservoir
+      auto: true
+      title_template: "{node_id} Operations"
+      y1_axis:
+        label: "Storage (m³)"
+        variables: [storage]
+      y2_axis:
+        label: "Flow (m³/day)"
+        variables: [inflow, outflow, evap_loss, spill]
+    
+    # Demand supply vs request
+    - type: demand
+      auto: true
+      title_template: "{node_id} Supply vs Demand"
+      y1_axis:
+        label: "Flow (m³/day)"
+        variables: [request, delivered, deficit]
+  
+  # Layout settings
+  layout:
+    width: 1200
+    height: 400
+    output_file: "simple_network_results.html"
+
 climate:
   source_type: timeseries
   filepath: climate_data.csv  # Path to climate CSV file

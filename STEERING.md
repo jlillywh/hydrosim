@@ -119,4 +119,4 @@ To ensure Global Optimization respects Local Controls, the timestep execution or
 
 - **No Hidden Flows:** Water cannot teleport. If Node A sends water to Node B, a Link object must exist between them.
 - **No "Super-Nodes":** A Reservoir Node should not calculate its own spillway release. That logic belongs in the Link connecting the Reservoir to the River.
-- **No Sub-Daily Loops:** If a process requires 15-minute routing, it belongs in a different tool. FlowSim is for strategic planning, not hydraulic transient analysis.
+- **No Sub-Daily Loops:** If a process requires 15-minute routing, it belongs in a different tool. HydroSim is for strategic planning, not hydraulic transient analysis.

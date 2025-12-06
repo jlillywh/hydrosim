@@ -3,6 +3,49 @@ WGEN stochastic weather generator.
 
 This module implements the WGEN algorithm for generating synthetic daily
 weather data including precipitation, temperature, and solar radiation.
+
+The WGEN algorithm uses:
+- First-order Markov chain for wet/dry day sequences
+- Gamma distribution for precipitation amounts on wet days
+- Fourier functions for seasonal temperature and radiation patterns
+- Stochastic variation based on coefficient of variation parameters
+
+Parameters can be specified in two ways:
+1. Inline in YAML configuration (wgen_params dictionary)
+2. External CSV file (wgen_params_file path)
+
+For CSV parameter configuration, see:
+- hydrosim.wgen_params.CSVWGENParamsParser for CSV loading
+- examples/wgen_params_template.csv for template file
+- README.md WGEN section for parameter descriptions and valid ranges
+
+Example Usage:
+    from hydrosim.wgen import WGENParams, WGENState, wgen_step
+    import datetime
+    
+    # Define parameters
+    params = WGENParams(
+        pww=[0.45]*12, pwd=[0.25]*12,
+        alpha=[1.2]*12, beta=[8.5]*12,
+        txmd=20.0, atx=10.0, txmw=18.0,
+        tn=10.0, atn=8.0,
+        cvtx=0.1, acvtx=0.05,
+        cvtn=0.1, acvtn=0.05,
+        rmd=15.0, ar=5.0, rmw=12.0,
+        latitude=45.0, random_seed=42
+    )
+    
+    # Initialize state
+    state = WGENState(
+        is_wet=False,
+        current_date=datetime.date(2024, 1, 1)
+    )
+    
+    # Generate weather for one day
+    new_state, outputs = wgen_step(params, state)
+    print(f"Precipitation: {outputs.precip_mm:.1f} mm")
+    print(f"Temperature: {outputs.tmin_c:.1f} to {outputs.tmax_c:.1f} °C")
+    print(f"Solar radiation: {outputs.solar_mjm2:.1f} MJ/m²/day")
 """
 
 import datetime

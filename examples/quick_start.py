@@ -13,8 +13,13 @@ This is the recommended way to use HydroSim for most applications.
 """
 
 from datetime import datetime
+import webbrowser
+import os
 from hydrosim.config import YAMLParser
-from hydrosim import SimulationEngine, LinearProgrammingSolver, ResultsWriter, ClimateEngine
+from hydrosim import (
+    SimulationEngine, LinearProgrammingSolver, ResultsWriter, ClimateEngine,
+    visualize_network, visualize_results
+)
 
 
 def run_simple_example():
@@ -68,14 +73,41 @@ def run_simple_example():
     
     print(f"   ✓ Completed {num_days} days of simulation")
     
-    # Step 6: Write results to files
-    print("\n[Step 6] Writing results to files...")
+    # Step 6: Generate visualizations
+    print("\n[Step 6] Generating visualizations...")
+    
+    # Network topology map
+    fig_network = visualize_network(network)
+    network_config = (network.viz_config or {}).get('network_map', {})
+    network_file = network_config.get('output_file', 'simple_network_topology.html')
+    fig_network.write_html(f'output/{network_file}')
+    print(f"   ✓ Network topology: output/{network_file}")
+    
+    # Time series results
+    viz_config = network.viz_config or {}
+    layout_config = viz_config.get('layout', {})
+    results_file = layout_config.get('output_file', 'simple_network_results.html')
+    visualize_results(
+        results_writer=writer,
+        network=network,
+        viz_config=viz_config,
+        output_file=f'output/{results_file}'
+    )
+    print(f"   ✓ Results plots: output/{results_file}")
+    
+    # Open visualizations in browser
+    print("   Opening visualizations in browser...")
+    webbrowser.open(f'file://{os.path.abspath(f"output/{network_file}")}')
+    webbrowser.open(f'file://{os.path.abspath(f"output/{results_file}")}')
+    
+    # Step 7: Write results to files
+    print("\n[Step 7] Writing results to files...")
     files = writer.write_all(prefix="simple_network")
     for file_type, filepath in files.items():
         print(f"   ✓ {file_type}: {filepath}")
     
-    # Step 7: Print summary statistics
-    print("\n[Step 7] Simulation Summary")
+    # Step 8: Print summary statistics
+    print("\n[Step 8] Simulation Summary")
     print("-" * 70)
     results = writer.get_results()
     
@@ -171,14 +203,41 @@ def run_complex_example():
     
     print(f"   ✓ Completed {num_days} days of simulation")
     
-    # Step 6: Write results to files
-    print("\n[Step 6] Writing results to files...")
+    # Step 6: Generate visualizations
+    print("\n[Step 6] Generating visualizations...")
+    
+    # Network topology map
+    fig_network = visualize_network(network)
+    network_config = (network.viz_config or {}).get('network_map', {})
+    network_file = network_config.get('output_file', 'complex_network_topology.html')
+    fig_network.write_html(f'output/{network_file}')
+    print(f"   ✓ Network topology: output/{network_file}")
+    
+    # Time series results
+    viz_config = network.viz_config or {}
+    layout_config = viz_config.get('layout', {})
+    results_file = layout_config.get('output_file', 'complex_network_results.html')
+    visualize_results(
+        results_writer=writer,
+        network=network,
+        viz_config=viz_config,
+        output_file=f'output/{results_file}'
+    )
+    print(f"   ✓ Results plots: output/{results_file}")
+    
+    # Open visualizations in browser
+    print("   Opening visualizations in browser...")
+    webbrowser.open(f'file://{os.path.abspath(f"output/{network_file}")}')
+    webbrowser.open(f'file://{os.path.abspath(f"output/{results_file}")}')
+    
+    # Step 7: Write results to files
+    print("\n[Step 7] Writing results to files...")
     files = writer.write_all(prefix="complex_network")
     for file_type, filepath in files.items():
         print(f"   ✓ {file_type}: {filepath}")
     
-    # Step 7: Print summary statistics
-    print("\n[Step 7] Simulation Summary")
+    # Step 8: Print summary statistics
+    print("\n[Step 8] Simulation Summary")
     print("-" * 70)
     results = writer.get_results()
     
@@ -235,10 +294,13 @@ def main():
     print("=" * 70)
     print("Next Steps:")
     print("=" * 70)
-    print("1. Examine the output files in the 'output' directory")
-    print("2. Modify the YAML configuration files to create your own network")
-    print("3. See examples/README.md for detailed configuration options")
-    print("4. See examples/results_output_example.py for programmatic usage")
+    print("1. Open the HTML visualizations in the 'output' directory:")
+    print("   - Network topology maps (interactive)")
+    print("   - Time series results plots (interactive)")
+    print("2. Examine the CSV/JSON data files in the 'output' directory")
+    print("3. Modify the YAML configuration files to create your own network")
+    print("4. See examples/README.md for detailed configuration options")
+    print("5. See examples/results_output_example.py for programmatic usage")
     print("=" * 70)
     print()
 

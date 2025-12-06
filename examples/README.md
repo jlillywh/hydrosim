@@ -79,6 +79,52 @@ Sample inflow time series for 30 days:
 - Date
 - Inflow volume (m³/day)
 
+#### wgen_params_template.csv
+Template CSV file containing all 62 WGEN (Weather GENerator) parameters for stochastic climate generation. This file provides realistic parameter values calibrated for a mid-latitude location (approximately 45°N) with a temperate climate.
+
+**Parameter Categories:**
+
+1. **Precipitation Parameters (48 columns):**
+   - `pww_jan` through `pww_dec` - Probability of wet day following wet day (0-1)
+   - `pwd_jan` through `pwd_dec` - Probability of wet day following dry day (0-1)
+   - `alpha_jan` through `alpha_dec` - Gamma distribution shape parameter for precipitation amount (>0)
+   - `beta_jan` through `beta_dec` - Gamma distribution scale parameter for precipitation amount (>0)
+
+2. **Temperature Parameters (9 columns):**
+   - `txmd` - Mean maximum temperature on dry days (°C)
+   - `atx` - Amplitude of maximum temperature annual variation (°C)
+   - `txmw` - Mean maximum temperature on wet days (°C)
+   - `tn` - Mean minimum temperature (°C)
+   - `atn` - Amplitude of minimum temperature annual variation (°C)
+   - `cvtx` - Coefficient of variation for maximum temperature (0-1)
+   - `acvtx` - Amplitude of CV variation for maximum temperature (0-1)
+   - `cvtn` - Coefficient of variation for minimum temperature (0-1)
+   - `acvtn` - Amplitude of CV variation for minimum temperature (0-1)
+
+3. **Solar Radiation Parameters (3 columns):**
+   - `rmd` - Mean solar radiation on dry days (MJ/m²/day)
+   - `ar` - Amplitude of solar radiation annual variation (MJ/m²/day)
+   - `rmw` - Mean solar radiation on wet days (MJ/m²/day)
+
+4. **Location Parameters (1 column):**
+   - `latitude` - Site latitude in decimal degrees (-90 to 90)
+
+5. **Optional Parameters (1 column):**
+   - `random_seed` - Random seed for reproducibility (integer or empty)
+
+**Template Values:**
+The template uses realistic values for a mid-latitude temperate climate:
+- Winter months (Dec-Feb): Higher precipitation probability, lower temperatures
+- Summer months (Jun-Aug): Lower precipitation probability, higher temperatures
+- Spring/Fall (Mar-May, Sep-Nov): Transitional values
+- Latitude: 45.0°N (typical for northern US, southern Canada, central Europe)
+
+**Usage:**
+1. Copy this template to create your own parameter file
+2. Modify values to match your study location's climate
+3. Reference the CSV file in your YAML configuration using `wgen_params_file`
+4. See WGEN Climate Configuration section below for details
+
 ### Python Examples
 
 #### quick_start.py
@@ -317,6 +363,21 @@ climate:
 ```
 
 ### WGEN Stochastic Climate
+
+WGEN (Weather GENerator) generates synthetic daily climate data using stochastic methods. Parameters can be specified either inline in YAML or in a separate CSV file.
+
+**Option 1: CSV Parameter File (Recommended)**
+```yaml
+climate:
+  source_type: wgen
+  start_date: '2024-01-01'
+  wgen_params_file: wgen_params_template.csv  # Relative to YAML file location
+  site:
+    latitude: 45.0
+    elevation: 1000.0
+```
+
+**Option 2: Inline YAML Parameters**
 ```yaml
 climate:
   source_type: wgen
@@ -343,6 +404,20 @@ climate:
     latitude: 45.0
     elevation: 1000.0
 ```
+
+**CSV File Benefits:**
+- Easier to manage 62 parameters in spreadsheet format
+- Reusable across multiple simulations
+- Can be version controlled separately
+- Reduces YAML file complexity
+- See `wgen_params_template.csv` for complete parameter list and documentation
+
+**Important Notes:**
+- Use either `wgen_params` (inline) OR `wgen_params_file` (CSV), not both
+- CSV file path can be relative (to YAML file) or absolute
+- All 62 parameters must be present in CSV file
+- Monthly parameters use suffix naming: `pww_jan`, `pww_feb`, etc.
+- See `wgen_params_template.csv` for parameter descriptions and valid ranges
 
 ## Usage
 

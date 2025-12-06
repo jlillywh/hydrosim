@@ -52,6 +52,54 @@ def sample_inflow_csv(temp_config_dir):
     return csv_path
 
 
+def create_wgen_csv_new_format(csv_path, pww_val=0.6, pwd_val=0.3, alpha_val=0.5, beta_val=2.0,
+                                txmd=25.0, atx=5.0, txmw=23.0, tn=15.0, atn=3.0,
+                                cvtx=0.1, acvtx=0.05, cvtn=0.1, acvtn=0.05,
+                                rmd=20.0, ar=5.0, rmw=15.0, latitude=45.0, random_seed=None):
+    """Helper function to create WGEN CSV files in the new format."""
+    lines = []
+    
+    # Monthly parameters section
+    lines.append("month,pww,pwd,alpha,beta")
+    months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    for month in months:
+        lines.append(f"{month},{pww_val},{pwd_val},{alpha_val},{beta_val}")
+    
+    lines.append("")  # Blank line
+    
+    # Temperature parameters section
+    lines.append("parameter,value")
+    lines.append(f"txmd,{txmd}")
+    lines.append(f"atx,{atx}")
+    lines.append(f"txmw,{txmw}")
+    lines.append(f"tn,{tn}")
+    lines.append(f"atn,{atn}")
+    lines.append(f"cvtx,{cvtx}")
+    lines.append(f"acvtx,{acvtx}")
+    lines.append(f"cvtn,{cvtn}")
+    lines.append(f"acvtn,{acvtn}")
+    
+    lines.append("")  # Blank line
+    
+    # Radiation parameters section
+    lines.append("parameter,value")
+    lines.append(f"rmd,{rmd}")
+    lines.append(f"ar,{ar}")
+    lines.append(f"rmw,{rmw}")
+    
+    lines.append("")  # Blank line
+    
+    # Location parameters section
+    lines.append("parameter,value")
+    lines.append(f"latitude,{latitude}")
+    if random_seed is not None:
+        lines.append(f"random_seed,{random_seed}")
+    
+    # Write CSV file
+    with open(csv_path, 'w', newline='') as f:
+        f.write('\n'.join(lines) + '\n')
+
+
 def test_yaml_parser_file_not_found():
     """Test that parser raises error for non-existent file."""
     with pytest.raises(FileNotFoundError):
@@ -541,3 +589,328 @@ def test_yaml_parser_wgen_climate_source(temp_config_dir):
     assert isinstance(climate_source, WGENClimateSource)
     assert climate_source.params.pww[0] == 0.6
     assert climate_source.params.pwd[0] == 0.3
+
+
+# ============================================================================
+# WGEN CSV Configuration Validation Tests (Task 4)
+# ============================================================================
+
+def test_wgen_conflicting_configuration_both_inline_and_csv(temp_config_dir):
+    """Test that parser raises error when both inline params and CSV file are specified."""
+    # Create a dummy CSV file
+    csv_path = temp_config_dir / "wgen_params.csv"
+    create_wgen_csv_new_format(csv_path)
+    
+    config_path = temp_config_dir / "conflicting_wgen.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Both inline params AND CSV file specified - should raise error
+            'wgen_params': {
+                'pww': [0.6] * 12,
+                'pwd': [0.3] * 12,
+                'alpha': [0.5] * 12,
+                'beta': [2.0] * 12,
+                'txmd': 25.0,
+                'atx': 5.0,
+                'txmw': 23.0,
+                'tn': 15.0,
+                'atn': 3.0,
+                'cvtx': 0.1,
+                'acvtx': 0.05,
+                'cvtn': 0.1,
+                'acvtn': 0.05,
+                'rmd': 20.0,
+                'ar': 5.0,
+                'rmw': 15.0,
+                'latitude': 45.0
+            },
+            'wgen_params_file': 'wgen_params.csv',
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError) as exc_info:
+        parser.parse()
+    
+    error_msg = str(exc_info.value)
+    assert "cannot specify both" in error_msg.lower()
+    assert "wgen_params" in error_msg
+    assert "wgen_params_file" in error_msg
+
+
+def test_wgen_missing_configuration_neither_inline_nor_csv(temp_config_dir):
+    """Test that parser raises error when neither inline params nor CSV file are specified."""
+    config_path = temp_config_dir / "missing_wgen.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Neither wgen_params nor wgen_params_file specified - should raise error
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError) as exc_info:
+        parser.parse()
+    
+    error_msg = str(exc_info.value)
+    assert "requires either" in error_msg.lower()
+    assert "wgen_params" in error_msg
+    assert "wgen_params_file" in error_msg
+
+
+def test_wgen_csv_relative_path_resolution(temp_config_dir):
+    """Test that parser correctly resolves relative CSV file paths."""
+    # Create a valid CSV file in the temp directory
+    csv_path = temp_config_dir / "wgen_params.csv"
+    create_wgen_csv_new_format(csv_path)
+    
+    config_path = temp_config_dir / "wgen_relative.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Use relative path (relative to YAML file location)
+            'wgen_params_file': 'wgen_params.csv',
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    # Should successfully parse and resolve the relative path
+    network, climate_source, site_config = parser.parse()
+    
+    assert isinstance(climate_source, WGENClimateSource)
+    assert climate_source.params.pww[0] == 0.6
+    assert climate_source.params.latitude == 45.0
+
+
+def test_wgen_csv_relative_path_subdirectory(temp_config_dir):
+    """Test that parser correctly resolves relative CSV file paths in subdirectories."""
+    # Create a subdirectory
+    subdir = temp_config_dir / "params"
+    subdir.mkdir()
+    
+    # Create a valid CSV file in the subdirectory
+    csv_path = subdir / "wgen_params.csv"
+    create_wgen_csv_new_format(csv_path, pww_val=0.5, pwd_val=0.25, alpha_val=1.0, beta_val=5.0,
+                               txmd=22.0, atx=8.0, txmw=20.0, tn=12.0, atn=6.0,
+                               cvtx=0.15, acvtx=0.08, cvtn=0.12, acvtn=0.06,
+                               rmd=18.0, ar=6.0, rmw=14.0, latitude=40.0)
+    
+    config_path = temp_config_dir / "wgen_subdir.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Use relative path with subdirectory
+            'wgen_params_file': 'params/wgen_params.csv',
+            'site': {
+                'latitude': 40.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    # Should successfully parse and resolve the relative path with subdirectory
+    network, climate_source, site_config = parser.parse()
+    
+    assert isinstance(climate_source, WGENClimateSource)
+    assert climate_source.params.pww[0] == 0.5
+    assert climate_source.params.latitude == 40.0
+
+
+def test_wgen_csv_absolute_path_handling(temp_config_dir):
+    """Test that parser correctly handles absolute CSV file paths."""
+    # Create a valid CSV file
+    csv_path = temp_config_dir / "wgen_params_absolute.csv"
+    create_wgen_csv_new_format(csv_path, pww_val=0.7, pwd_val=0.35, alpha_val=1.5, beta_val=6.0,
+                               txmd=28.0, atx=12.0, txmw=26.0, tn=18.0, atn=10.0,
+                               cvtx=0.2, acvtx=0.1, cvtn=0.15, acvtn=0.08,
+                               rmd=22.0, ar=8.0, rmw=18.0, latitude=50.0)
+    
+    config_path = temp_config_dir / "wgen_absolute.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Use absolute path
+            'wgen_params_file': str(csv_path.absolute()),
+            'site': {
+                'latitude': 50.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    # Should successfully parse using the absolute path
+    network, climate_source, site_config = parser.parse()
+    
+    assert isinstance(climate_source, WGENClimateSource)
+    assert climate_source.params.pww[0] == 0.7
+    assert climate_source.params.latitude == 50.0
+
+
+def test_wgen_csv_file_not_found_relative_path(temp_config_dir):
+    """Test that parser raises FileNotFoundError for missing CSV file with relative path."""
+    config_path = temp_config_dir / "wgen_missing_csv.yaml"
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Reference non-existent CSV file
+            'wgen_params_file': 'nonexistent_params.csv',
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(FileNotFoundError):
+        parser.parse()
+
+
+def test_wgen_csv_file_not_found_absolute_path(temp_config_dir):
+    """Test that parser raises FileNotFoundError for missing CSV file with absolute path."""
+    config_path = temp_config_dir / "wgen_missing_csv_abs.yaml"
+    # Create an absolute path to a non-existent file
+    nonexistent_csv = temp_config_dir / "definitely_does_not_exist.csv"
+    
+    config = {
+        'climate': {
+            'source_type': 'wgen',
+            'start_date': '2024-01-01',
+            # Reference non-existent CSV file with absolute path
+            'wgen_params_file': str(nonexistent_csv.absolute()),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'j1': {'type': 'junction'},
+            'j2': {'type': 'junction'}
+        },
+        'links': {
+            'link1': {
+                'source': 'j1',
+                'target': 'j2',
+                'capacity': 100.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(FileNotFoundError):
+        parser.parse()

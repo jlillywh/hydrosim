@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2024-12-05
+
+### Added
+- Climate Builder module for WGEN parameter generation from GHCN-Daily data
+  - GHCN-Daily data fetcher with automatic station discovery
+  - DLY file parser for GHCN-Daily format
+  - Temperature parameter calculator (mean, standard deviation, lag-1 autocorrelation)
+  - Precipitation parameter calculator (wet/dry probabilities, gamma distribution)
+  - Solar radiation parameter calculator (mean, standard deviation)
+  - Parameter CSV generator for WGEN integration
+  - Comprehensive data quality validation and reporting
+- WGEN CSV parameter file parser
+- Network visualization tools with matplotlib
+- Results visualization module for time series analysis
+- Example project structure with configuration templates
+- Comprehensive test suite for climate builder components
+
+### Changed
+- Enhanced WGEN integration with CSV parameter support
+- Improved documentation with climate builder examples
+- Updated requirements with visualization dependencies
+
+### Fixed
+- WGEN parameter handling and validation
+
 ## [0.2.0] - 2024-12-04
 
 ### Added

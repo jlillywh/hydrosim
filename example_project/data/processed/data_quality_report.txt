@@ -1,0 +1,20 @@
+======================================================================
+DATA QUALITY REPORT
+======================================================================
+Station ID: USW00024233
+Data Period: 1948-01-01 to 2025-12-31
+Total Days: 28470
+Duration: 78.0 years
+
+Missing Data:
+  Precipitation: 0.2%
+  Maximum Temperature: 0.2%
+  Minimum Temperature: 0.2%
+
+WARNINGS:
+  - Found 1 days with unrealistic values. See unrealistic_values list for details.
+
+Unrealistic Values (1 days):
+  - {'date': '1951-11-20', 'issues': ['tmax (-15.6°C) < tmin (3.9°C)']}
+
+======================================================================

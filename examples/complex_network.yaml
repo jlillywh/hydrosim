@@ -11,6 +11,62 @@
 # - Capacity constraints (max_storage and min_storage)
 # - Automatic prioritization: demands > storage > spilling
 
+model_name: "Complex Multi-Reservoir System"
+author: "HydroSim Team"
+
+visualization:
+  # Network map configuration
+  network_map:
+    width: 800
+    height: 1400
+    layout: hierarchical
+    output_file: "complex_network_topology.html"
+  
+  # Time series plots configuration
+  plots:
+    # Climate plot
+    - type: climate
+      title: "Climate Conditions"
+      y1_axis:
+        label: "Precipitation (mm/day)"
+        variables: [precip]
+      y2_axis:
+        label: "Temperature (°C)"
+        variables: [tmax, tmin]
+    
+    # Source/catchment runoff
+    - type: source
+      auto: true
+      title_template: "{node_id} Runoff"
+      y1_axis:
+        label: "Runoff (m³/day)"
+        variables: [inflow]
+    
+    # Reservoir operations (auto-generates for both reservoirs)
+    - type: reservoir
+      auto: true
+      title_template: "{node_id} Operations"
+      y1_axis:
+        label: "Storage (m³)"
+        variables: [storage]
+      y2_axis:
+        label: "Flow (m³/day)"
+        variables: [inflow, outflow, evap_loss, spill]
+    
+    # Demand supply vs request (auto-generates for city and farm)
+    - type: demand
+      auto: true
+      title_template: "{node_id} Supply vs Demand"
+      y1_axis:
+        label: "Flow (m³/day)"
+        variables: [request, delivered, deficit]
+  
+  # Layout settings
+  layout:
+    width: 1400
+    height: 400
+    output_file: "complex_network_results.html"
+
 climate:
   source_type: timeseries
   filepath: climate_data.csv

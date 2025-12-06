@@ -1,0 +1,201 @@
+# WGEN Stochastic Weather Generation Example
+#
+# This example demonstrates HydroSim's WGEN (Weather GENerator) integration
+# with CSV-based parameter configuration. WGEN generates synthetic daily
+# climate data including:
+# - Precipitation (mm/day)
+# - Maximum temperature (°C)
+# - Minimum temperature (°C)
+# - Solar radiation (MJ/m²/day)
+#
+# Key Features:
+# - CSV parameter file for easy parameter management
+# - Stochastic weather generation for long-term simulations
+# - Monthly parameter variation for seasonal patterns
+# - Complete water network with storage and demands
+
+model_name: "WGEN Stochastic Weather Example"
+author: "HydroSim Team"
+
+visualization:
+  # Network map configuration
+  network_map:
+    width: 600
+    height: 800
+    layout: hierarchical
+    output_file: "wgen_network_topology.html"
+  
+  # Time series plots configuration
+  plots:
+    # Climate plot - shows generated weather data
+    - type: climate
+      title: "WGEN Generated Climate"
+      y1_axis:
+        label: "Precipitation (mm/day)"
+        variables: [precip]
+      y2_axis:
+        label: "Temperature (°C)"
+        variables: [tmax, tmin]
+    
+    # Source/catchment runoff
+    - type: source
+      auto: true
+      title_template: "{node_id} Runoff"
+      y1_axis:
+        label: "Runoff (m³/day)"
+        variables: [inflow]
+    
+    # Reservoir operations
+    - type: reservoir
+      auto: true
+      title_template: "{node_id} Operations"
+      y1_axis:
+        label: "Storage (m³)"
+        variables: [storage]
+      y2_axis:
+        label: "Flow (m³/day)"
+        variables: [inflow, outflow, evap_loss, spill]
+    
+    # Demand supply vs request
+    - type: demand
+      auto: true
+      title_template: "{node_id} Supply vs Demand"
+      y1_axis:
+        label: "Flow (m³/day)"
+        variables: [request, delivered, deficit]
+  
+  # Layout settings
+  layout:
+    width: 1200
+    height: 400
+    output_file: "wgen_simulation_results.html"
+
+# WGEN Climate Configuration
+# Uses CSV file for parameter specification (62 parameters total)
+# Alternative: Use inline 'wgen_params' dictionary (see design.md)
+climate:
+  source_type: wgen
+  start_date: "2024-01-01"
+  wgen_params_file: wgen_params_template.csv  # Relative path to CSV file
+  site:
+    latitude: 45.0    # degrees (mid-latitude location)
+    elevation: 1000.0 # meters
+
+nodes:
+  # Mountain catchment with climate-driven runoff
+  # In a real application, this would use a rainfall-runoff model
+  # For this example, we use time series inflow data
+  mountain_catchment:
+    type: source
+    strategy: timeseries
+    filepath: inflow_data.csv  # Relative path to inflow data
+    column: inflow
+  
+  # Main reservoir for water storage
+  # Demonstrates interaction between stochastic climate and storage operations
+  main_reservoir:
+    type: storage
+    initial_storage: 40000.0  # m³
+    max_storage: 80000.0      # m³ (maximum capacity)
+    min_storage: 2000.0       # m³ (dead pool)
+    eav_table:
+      elevations: [100.0, 105.0, 110.0, 115.0, 120.0]  # meters
+      areas: [1500.0, 2500.0, 3500.0, 4500.0, 5500.0]  # m²
+      volumes: [0.0, 10000.0, 30000.0, 55000.0, 85000.0] # m³
+  
+  # Municipal water demand
+  city:
+    type: demand
+    demand_type: municipal
+    population: 8000.0         # people
+    per_capita_demand: 0.25    # m³/person/day (2,000 m³/day total)
+  
+  # Agricultural demand (irrigation)
+  # Demand varies with climate (temperature affects crop water needs)
+  farm:
+    type: demand
+    demand_type: agriculture
+    area: 25000.0              # m² (2.5 hectares)
+    crop_coefficient: 0.75     # Crop water use factor
+
+links:
+  # Inflow from catchment to reservoir
+  catchment_to_reservoir:
+    source: mountain_catchment
+    target: main_reservoir
+    capacity: 8000.0  # m³/day
+    cost: 0.0         # no cost for natural inflow
+  
+  # Water delivery to city (high priority)
+  reservoir_to_city:
+    source: main_reservoir
+    target: city
+    capacity: 3000.0  # m³/day
+    # cost: -1000.0   # COST_DEMAND (auto-assigned for demand links)
+  
+  # Water delivery to farm (high priority)
+  reservoir_to_farm:
+    source: main_reservoir
+    target: farm
+    capacity: 2000.0  # m³/day
+    # cost: -1000.0   # COST_DEMAND (auto-assigned for demand links)
+
+# WGEN Parameter File Format:
+# 
+# The CSV file (wgen_params_template.csv) contains 62 parameters:
+# 
+# Precipitation Parameters (48 columns):
+#   - pww_jan through pww_dec: Probability wet|wet (12 values)
+#   - pwd_jan through pwd_dec: Probability wet|dry (12 values)
+#   - alpha_jan through alpha_dec: Gamma shape parameter (12 values)
+#   - beta_jan through beta_dec: Gamma scale parameter (12 values)
+# 
+# Temperature Parameters (9 columns):
+#   - txmd: Mean max temp on dry days (°C)
+#   - atx: Amplitude of max temp variation (°C)
+#   - txmw: Mean max temp on wet days (°C)
+#   - tn: Mean min temperature (°C)
+#   - atn: Amplitude of min temp variation (°C)
+#   - cvtx: Coefficient of variation for max temp
+#   - acvtx: Amplitude of CV variation for max temp
+#   - cvtn: Coefficient of variation for min temp
+#   - acvtn: Amplitude of CV variation for min temp
+# 
+# Radiation Parameters (3 columns):
+#   - rmd: Mean radiation on dry days (MJ/m²/day)
+#   - ar: Amplitude of radiation variation (MJ/m²/day)
+#   - rmw: Mean radiation on wet days (MJ/m²/day)
+# 
+# Location Parameters (1 column):
+#   - latitude: Site latitude in degrees (-90 to 90)
+# 
+# Optional Parameters (1 column):
+#   - random_seed: Random seed for reproducibility
+#
+# Usage Notes:
+# 
+# 1. CSV File Path Resolution:
+#    - Relative paths are resolved from the YAML file's directory
+#    - Absolute paths can also be used
+#    - Example: wgen_params_file: ../shared/climate_params.csv
+# 
+# 2. Parameter Reusability:
+#    - Create parameter files for different climate regions
+#    - Share parameter files across multiple simulations
+#    - Version control parameter files separately from configurations
+# 
+# 3. Stochastic Simulation:
+#    - Each run generates different weather sequences
+#    - Use random_seed for reproducible results
+#    - Run multiple realizations for uncertainty analysis
+# 
+# 4. Climate-Driven Processes:
+#    - Precipitation drives catchment runoff
+#    - Temperature affects evaporation from reservoirs
+#    - Solar radiation influences evapotranspiration
+#    - Agricultural demand varies with climate conditions
+#
+# For more information, see:
+# - examples/wgen_params_template.csv (parameter file template)
+# - examples/wgen_example.py (Python script demonstrating usage)
+# - README.md (WGEN configuration documentation)

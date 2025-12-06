@@ -150,10 +150,18 @@ class ElevationAreaVolume:
 class NetworkGraph:
     """Directed graph representation of the water network."""
     
-    def __init__(self):
-        """Initialize an empty network graph."""
+    def __init__(self, model_name: Optional[str] = None, author: Optional[str] = None):
+        """
+        Initialize an empty network graph.
+        
+        Args:
+            model_name: Optional name/title for the model
+            author: Optional author name
+        """
         self.nodes: Dict[str, Node] = {}
         self.links: Dict[str, Link] = {}
+        self.model_name = model_name
+        self.author = author
     
     def add_node(self, node: Node) -> None:
         """
@@ -499,8 +507,14 @@ class YAMLParser:
         # Parse climate configuration first (needed for some strategies)
         climate_source, site_config = self._parse_climate_config()
         
+        # Parse optional metadata
+        model_name = self.config.get('model_name')
+        author = self.config.get('author')
+        viz_config = self.config.get('visualization')
+        
         # Create network graph
-        network = NetworkGraph()
+        network = NetworkGraph(model_name=model_name, author=author)
+        network.viz_config = viz_config
         
         # Parse and add nodes
         nodes_config = self.config.get('nodes', {})
@@ -652,16 +666,98 @@ class YAMLParser:
         """
         Parse WGEN climate source configuration.
         
+        Supports two parameter specification methods:
+        1. Inline YAML: wgen_params dictionary with all 62 parameters
+        2. CSV file: wgen_params_file string pointing to CSV parameter file
+        
+        The CSV method is recommended for managing the 62 WGEN parameters more easily.
+        CSV files can be created using CSVWGENParamsParser.create_template().
+        
+        Example YAML (CSV method):
+            climate:
+              source_type: wgen
+              start_date: "2024-01-01"
+              wgen_params_file: wgen_params.csv  # Relative to YAML file
+              site:
+                latitude: 45.0
+                elevation: 1000.0
+        
+        Example YAML (inline method):
+            climate:
+              source_type: wgen
+              start_date: "2024-01-01"
+              wgen_params:
+                pww: [0.45, 0.42, ..., 0.48]  # 12 monthly values
+                pwd: [0.25, 0.23, ..., 0.27]  # 12 monthly values
+                alpha: [1.2, 1.1, ..., 1.3]   # 12 monthly values
+                beta: [8.5, 7.8, ..., 9.2]    # 12 monthly values
+                txmd: 20.0
+                atx: 10.0
+                # ... (9 temperature parameters)
+                rmd: 15.0
+                ar: 5.0
+                rmw: 12.0
+                latitude: 45.0
+                random_seed: 42
+              site:
+                latitude: 45.0
+                elevation: 1000.0
+        
         Args:
-            climate_config: Climate configuration dictionary
+            climate_config: Climate configuration dictionary from YAML
             
         Returns:
-            WGENClimateSource instance
-        """
-        wgen_params = climate_config.get('wgen_params', {})
-        if not wgen_params:
-            raise ValueError("WGEN climate source requires 'wgen_params'")
+            WGENClimateSource instance with validated parameters
+            
+        Raises:
+            ValueError: If configuration is invalid (missing parameters, both methods
+                       specified, neither method specified, invalid parameter values)
+            FileNotFoundError: If CSV file doesn't exist (via CSVWGENParamsParser)
         
+        See Also:
+            hydrosim.wgen_params.CSVWGENParamsParser: CSV parameter loading
+            hydrosim.wgen.WGENParams: Parameter validation and structure
+            examples/wgen_params_template.csv: Template CSV file
+            README.md: Complete WGEN parameter documentation
+        """
+        # Check for parameter specification
+        has_inline = 'wgen_params' in climate_config
+        has_csv = 'wgen_params_file' in climate_config
+        
+        # Validate mutually exclusive options
+        if has_inline and has_csv:
+            raise ValueError(
+                "Cannot specify both 'wgen_params' and 'wgen_params_file'. "
+                "Use one method to provide WGEN parameters."
+            )
+        
+        if not has_inline and not has_csv:
+            raise ValueError(
+                "WGEN climate source requires either 'wgen_params' (inline) "
+                "or 'wgen_params_file' (CSV file path)."
+            )
+        
+        # Load parameters from appropriate source
+        if has_inline:
+            # Existing inline parsing logic
+            wgen_params = climate_config['wgen_params']
+            try:
+                params = WGENParams(**wgen_params)
+            except TypeError as e:
+                raise ValueError(f"Invalid WGEN parameters: {e}")
+        else:
+            # New CSV file parsing logic
+            csv_path = climate_config['wgen_params_file']
+            
+            # Resolve relative paths
+            if not Path(csv_path).is_absolute():
+                csv_path = self.config_dir / csv_path
+            
+            # Parse CSV file
+            from hydrosim.wgen_params import CSVWGENParamsParser
+            params = CSVWGENParamsParser.parse(str(csv_path))
+        
+        # Parse start_date (common to both methods)
         start_date_str = climate_config.get('start_date')
         if not start_date_str:
             raise ValueError("WGEN climate source requires 'start_date'")
@@ -670,11 +766,6 @@ class YAMLParser:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
         except ValueError:
             raise ValueError(f"Invalid start_date format: {start_date_str}. Expected YYYY-MM-DD")
-        
-        try:
-            params = WGENParams(**wgen_params)
-        except TypeError as e:
-            raise ValueError(f"Invalid WGEN parameters: {e}")
         
         return WGENClimateSource(params, start_date)
     
