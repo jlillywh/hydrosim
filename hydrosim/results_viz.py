@@ -37,6 +37,45 @@ class ResultsVisualizer:
         # Convert results to dataframes for easier plotting
         self._prepare_dataframes()
     
+    def _format_axis_label(self, label: str) -> str:
+        """
+        Format axis labels for proper HTML display.
+        
+        Converts special characters to HTML entities to fix display issues
+        in Plotly HTML output.
+        
+        Args:
+            label: Raw axis label string
+            
+        Returns:
+            Formatted label with HTML entities
+        """
+        if not label:
+            return label
+            
+        # Replace common special characters with HTML entities
+        replacements = {
+            '°': '&deg;',      # Degree symbol
+            '³': '&sup3;',     # Superscript 3
+            '²': '&sup2;',     # Superscript 2
+            '¹': '&sup1;',     # Superscript 1
+            'μ': '&micro;',    # Micro symbol
+            'α': '&alpha;',    # Alpha
+            'β': '&beta;',     # Beta
+            'γ': '&gamma;',    # Gamma
+            'δ': '&delta;',    # Delta
+            'Δ': '&Delta;',    # Capital Delta
+            '±': '&plusmn;',   # Plus-minus
+            '×': '&times;',    # Multiplication
+            '÷': '&divide;',   # Division
+        }
+        
+        formatted_label = label
+        for char, entity in replacements.items():
+            formatted_label = formatted_label.replace(char, entity)
+            
+        return formatted_label
+    
     def _prepare_dataframes(self) -> None:
         """Convert results to pandas DataFrames."""
         results = self.results_writer.get_results()
@@ -256,8 +295,8 @@ class ResultsVisualizer:
                 )
         
         # Update axes labels
-        fig.update_yaxes(title_text=y1_config.get('label', ''), row=row, col=1, secondary_y=False)
-        fig.update_yaxes(title_text=y2_config.get('label', ''), row=row, col=1, secondary_y=True)
+        fig.update_yaxes(title_text=self._format_axis_label(y1_config.get('label', '')), row=row, col=1, secondary_y=False)
+        fig.update_yaxes(title_text=self._format_axis_label(y2_config.get('label', '')), row=row, col=1, secondary_y=True)
     
     def _add_source_plot(self, fig: go.Figure, config: Dict, row: int) -> None:
         """Add source/catchment plot."""
@@ -280,7 +319,7 @@ class ResultsVisualizer:
                     row=row, col=1, secondary_y=False
                 )
         
-        fig.update_yaxes(title_text=y1_config.get('label', ''), row=row, col=1, secondary_y=False)
+        fig.update_yaxes(title_text=self._format_axis_label(y1_config.get('label', '')), row=row, col=1, secondary_y=False)
     
     def _add_reservoir_plot(self, fig: go.Figure, config: Dict, row: int) -> None:
         """Add reservoir plot."""
@@ -360,8 +399,8 @@ class ResultsVisualizer:
                 row=row, col=1, secondary_y=True
             )
         
-        fig.update_yaxes(title_text=y1_config.get('label', ''), row=row, col=1, secondary_y=False)
-        fig.update_yaxes(title_text=y2_config.get('label', ''), row=row, col=1, secondary_y=True)
+        fig.update_yaxes(title_text=self._format_axis_label(y1_config.get('label', '')), row=row, col=1, secondary_y=False)
+        fig.update_yaxes(title_text=self._format_axis_label(y2_config.get('label', '')), row=row, col=1, secondary_y=True)
     
     def _add_demand_plot(self, fig: go.Figure, config: Dict, row: int) -> None:
         """Add demand plot."""
@@ -384,7 +423,7 @@ class ResultsVisualizer:
                     row=row, col=1, secondary_y=False
                 )
         
-        fig.update_yaxes(title_text=y1_config.get('label', ''), row=row, col=1, secondary_y=False)
+        fig.update_yaxes(title_text=self._format_axis_label(y1_config.get('label', '')), row=row, col=1, secondary_y=False)
     
     def _calculate_node_inflows(self, node_id: str) -> pd.DataFrame:
         """Calculate total inflows to a node."""
