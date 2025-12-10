@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2024-12-10
+
+### Added
+- PyPI publishing configuration with modern `pyproject.toml`
+- Automated publishing script (`publish.py`) with safety checks
+- Comprehensive installation verification script (`verify_installation.py`)
+- Complete publishing documentation and checklists
+
+### Changed
+- **BREAKING**: Updated all documentation to prioritize PyPI installation (`pip install hydrosim`)
+- Reorganized installation instructions across all README files
+- Examples now require repository clone (not included in PyPI package)
+- Updated dependency management for PyPI distribution
+
+### Fixed
+- Fixed license configuration for modern Python packaging standards
+- Updated test version assertions
+- Improved error handling in verification scripts
+
+### Documentation
+- Complete rewrite of installation sections in all documentation
+- Added PyPI-first user workflows
+- Created comprehensive publishing guides
+- Added installation verification tools
+
 ## [0.3.0] - 2024-12-05
 
 ### Added

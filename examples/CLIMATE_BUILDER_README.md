@@ -2,6 +2,36 @@
 
 This directory contains examples demonstrating how to use the Climate Builder module to acquire and process real climate data from NOAA's Global Historical Climatology Network (GHCN).
 
+## Installation & Setup
+
+### Prerequisites
+
+- Python 3.8 or higher
+- HydroSim framework installed from PyPI
+- Internet connection for GHCN data fetching
+
+### Installation
+
+1. **Install HydroSim from PyPI:**
+   ```bash
+   pip install hydrosim
+   ```
+
+2. **Get the examples (optional):**
+   ```bash
+   git clone https://github.com/jlillywh/hydrosim.git
+   cd hydrosim
+   ```
+
+### Dependencies
+
+The Climate Builder module is included with HydroSim and requires:
+- `requests` - For HTTP requests to NOAA servers (included with HydroSim)
+- `pandas` - For data manipulation (included with HydroSim)
+- `numpy` - For numerical computations (included with HydroSim)
+
+All dependencies are automatically installed with HydroSim.
+
 ## Quick Start
 
 ### Fetch Real GHCN Data

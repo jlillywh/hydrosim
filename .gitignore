@@ -54,6 +54,7 @@ env/
 # IDEs
 .vscode/
 .idea/
+.kiro/
 *.swp
 *.swo
 *~

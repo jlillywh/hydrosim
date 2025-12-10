@@ -5,7 +5,7 @@ This package provides tools for daily timestep simulation of complex,
 interconnected water systems.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from hydrosim.climate import ClimateState, SiteConfig
 from hydrosim.config import ElevationAreaVolume, NetworkGraph, YAMLParser

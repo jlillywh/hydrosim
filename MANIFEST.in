@@ -1,0 +1,27 @@
+# Include the README and license
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+# Include configuration files
+include pyproject.toml
+include setup.py
+include requirements.txt
+
+# Include example files (but they won't be installed)
+recursive-include examples *.py *.yaml *.yml *.csv *.md
+
+# Exclude development and build artifacts
+exclude .gitignore
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * *.so
+recursive-exclude * .DS_Store
+recursive-exclude .git *
+recursive-exclude .pytest_cache *
+recursive-exclude .venv *
+recursive-exclude .vscode *
+recursive-exclude output *
+recursive-exclude example_project *
+recursive-exclude tests *
+recursive-exclude *.egg-info *

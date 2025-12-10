@@ -126,51 +126,81 @@ tests/
 
 ## Installation
 
-### Prerequisites
+### Option 1: Install from PyPI (Recommended)
 
-- Python 3.8 or higher
-- pip package manager
+HydroSim is available on the Python Package Index (PyPI). Install it with pip:
 
-### Setup Steps
+```bash
+pip install hydrosim
+```
 
-1. Clone or download the repository:
+This will automatically install all required dependencies.
+
+**Verify installation:**
+```bash
+python -c "import hydrosim; print(f'HydroSim {hydrosim.__version__} installed successfully!')"
+```
+
+### Option 2: Development Installation
+
+For development or to access the latest features:
+
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/jlillywh/hydrosim.git
 cd hydrosim
 ```
 
-2. Create a virtual environment:
+2. **Create a virtual environment:**
 ```bash
 python -m venv .venv
 ```
 
-3. Activate the virtual environment:
+3. **Activate the virtual environment:**
 - **Windows**: `.venv\Scripts\activate`
 - **Unix/MacOS**: `source .venv/bin/activate`
 
-4. Install dependencies:
+4. **Install in development mode:**
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-5. Verify installation by running tests:
+5. **Install development dependencies (optional):**
 ```bash
-pytest
+pip install -e .[dev]
 ```
+
+6. **Verify installation:**
+```bash
+python verify_installation.py  # Comprehensive verification script
+# OR
+pytest  # Run tests (if dev dependencies installed)
+# OR  
+python -c "import hydrosim; print(hydrosim.__version__)"
+```
+
+### Prerequisites
+
+- **Python 3.8 or higher**
+- **pip package manager**
 
 ### Dependencies
 
-HydroSim requires the following Python packages:
-- **NumPy** - Numerical computations
-- **Pandas** - Data manipulation and time series
-- **NetworkX** - Graph algorithms and layout
-- **Plotly** - Interactive visualizations
-- **SciPy** - Optimization (linear programming)
-- **PyYAML** - YAML configuration parsing
-- **pytest** - Testing framework
-- **hypothesis** - Property-based testing
+HydroSim automatically installs these required packages:
+- **NumPy** (≥1.24.0) - Numerical computations
+- **Pandas** (≥2.0.0) - Data manipulation and time series
+- **SciPy** (≥1.10.0) - Optimization (linear programming)
+- **NetworkX** (≥3.0) - Graph algorithms and network analysis
+- **PyYAML** (≥6.0) - YAML configuration parsing
+- **Plotly** (≥5.0.0) - Interactive visualizations
+- **Requests** (≥2.25.0) - HTTP requests for climate data fetching
 
-All dependencies are listed in `requirements.txt` and will be installed automatically.
+### Development Dependencies (Optional)
+
+Install with `pip install hydrosim[dev]`:
+- **pytest** (≥7.4.0) - Testing framework
+- **hypothesis** (≥6.82.0) - Property-based testing
+- **pytest-cov** (≥4.1.0) - Test coverage reporting
 
 ## Running Tests
 
@@ -472,11 +502,20 @@ Interactive visualization of networks and results:
 
 ## Quick Start
 
-### Option 1: Run the Quick Start Example (Easiest!)
+### Option 1: Install and Try the Examples
 
-The fastest way to see HydroSim in action:
+After installing HydroSim from PyPI:
 
 ```bash
+# Install HydroSim
+pip install hydrosim
+
+# Download example files (if you want to run the examples)
+# Clone the repository to get example files:
+git clone https://github.com/jlillywh/hydrosim.git
+cd hydrosim
+
+# Run the quick start example
 python examples/quick_start.py
 ```
 
@@ -488,9 +527,57 @@ This will:
 5. Export results to CSV/JSON files
 6. Print summary statistics
 
-### Option 2: Using YAML Configuration (Recommended for Projects)
+### Option 2: Basic Usage (No Examples Needed)
 
-Create your own water network using YAML configuration:
+You can start using HydroSim immediately after installation:
+
+```python
+import hydrosim
+from datetime import datetime
+
+# Create a simple network programmatically
+network = hydrosim.NetworkGraph()
+
+# Add a storage node (reservoir)
+eav = hydrosim.ElevationAreaVolume(
+    elevations=[100.0, 110.0, 120.0],
+    areas=[1000.0, 2000.0, 3000.0], 
+    volumes=[0.0, 10000.0, 30000.0]
+)
+reservoir = hydrosim.StorageNode('reservoir', initial_storage=20000.0, eav_table=eav)
+network.add_node(reservoir)
+
+# Add a demand node
+demand = hydrosim.DemandNode('city', hydrosim.MunicipalDemand(population=10000, per_capita_demand=0.2))
+network.add_node(demand)
+
+# Connect them with a link
+link = hydrosim.Link('delivery', reservoir, demand, physical_capacity=3000.0, cost=1.0)
+network.add_link(link)
+
+# Set up simulation
+climate_engine = hydrosim.ClimateEngine(
+    climate_source=hydrosim.TimeSeriesClimateSource('climate_data.csv'),
+    site_config=hydrosim.SiteConfig(latitude=45.0, elevation=1000.0),
+    start_date=datetime(2024, 1, 1)
+)
+solver = hydrosim.LinearProgrammingSolver()
+engine = hydrosim.SimulationEngine(network, climate_engine, solver)
+
+# Run simulation
+writer = hydrosim.ResultsWriter(output_dir="output", format="csv")
+for day in range(30):  # 30 days
+    result = engine.step()
+    writer.add_timestep(result)
+
+# Export results
+files = writer.write_all(prefix="simulation")
+print(f"Results written to: {files}")
+```
+
+### Option 3: Using YAML Configuration (Recommended for Projects)
+
+Create your own water network using YAML configuration (requires example files from the repository):
 
 ```python
 from datetime import datetime
@@ -530,7 +617,7 @@ files = writer.write_all(prefix="simulation")
 print(f"Results written to: {files}")
 ```
 
-### Option 2: Programmatic Network Construction
+### Option 4: Advanced Programmatic Construction
 
 For more control, you can build networks programmatically:
 
@@ -565,33 +652,39 @@ network.add_link(link)
 
 ### Running the Examples
 
-Try the included examples to see HydroSim in action:
+To access the examples, you'll need to clone the repository (examples are not included in the PyPI package):
 
 ```bash
-# Run the quick start example (recommended first step)
-# Generates visualizations and opens them in your browser automatically
-python examples/quick_start.py
+# Clone repository for examples
+git clone https://github.com/jlillywh/hydrosim.git
+cd hydrosim
 
-# Run the network visualization demo
-python examples/network_visualization_demo.py
+# Install HydroSim (if not already installed)
+pip install hydrosim
 
-# Run the results visualization demo
-python examples/results_visualization_demo.py
-
-# Run the results output example
-python examples/results_output_example.py
+# Run the examples
+python examples/quick_start.py                    # Complete workflow demo
+python examples/network_visualization_demo.py    # Network topology visualization
+python examples/results_visualization_demo.py    # Time series results visualization
+python examples/results_output_example.py        # Programmatic usage example
 ```
 
-See the `examples/` directory for:
-- `simple_network.yaml` - Basic reservoir-demand system with visualization config
-- `complex_network.yaml` - Multi-reservoir system with controls and visualization config
-- `storage_drawdown_example.yaml` - Demonstrates active storage drawdown feature
-- `quick_start.py` - Complete workflow with automatic visualization
-- `network_visualization_demo.py` - Network topology visualization example
-- `results_visualization_demo.py` - Time series results visualization example
-- `results_output_example.py` - Programmatic usage example
-- `README.md` - Detailed configuration guide
-- Sample data files (`climate_data.csv`, `inflow_data.csv`)
+The `examples/` directory contains:
+- **Configuration Files:**
+  - `simple_network.yaml` - Basic reservoir-demand system
+  - `complex_network.yaml` - Multi-reservoir system with controls
+  - `storage_drawdown_example.yaml` - Active storage drawdown demo
+  - `wgen_example.yaml` - Stochastic weather generation example
+- **Python Scripts:**
+  - `quick_start.py` - Complete workflow with automatic visualization
+  - `*_demo.py` - Various feature demonstrations
+  - `*_example.py` - Usage examples for specific components
+- **Data Files:**
+  - `climate_data.csv`, `inflow_data.csv` - Sample time series data
+  - `wgen_params_template.csv` - WGEN parameter template
+- **Documentation:**
+  - `README.md` - Detailed configuration guide
+  - `CLIMATE_BUILDER_README.md` - Climate data tools guide
 
 ### YAML Visualization Configuration
 

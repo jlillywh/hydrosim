@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydrosim"
+version = "0.3.1"
+authors = [
+    {name = "J. Lillywh"},
+]
+maintainers = [
+    {name = "J. Lillywh"},
+]
+description = "A Python framework for water resources planning with daily timestep simulation"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Hydrology",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["hydrology", "water-resources", "simulation", "optimization", "network-flow", "reservoir"]
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "networkx>=3.0",
+    "pyyaml>=6.0",
+    "plotly>=5.0.0",
+    "requests>=2.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "hypothesis>=6.82.0",
+    "pytest-cov>=4.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jlillywh/hydrosim"
+Repository = "https://github.com/jlillywh/hydrosim"
+"Bug Reports" = "https://github.com/jlillywh/hydrosim/issues"
+Documentation = "https://github.com/jlillywh/hydrosim#readme"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "examples*", "example_project*", "output*"]
+
+[tool.setuptools.package-data]
+hydrosim = ["*.yaml", "*.yml"]

@@ -4,11 +4,22 @@ This directory contains example YAML configuration files and Python scripts demo
 
 ## Getting Started
 
+### Prerequisites
+
+1. **Install HydroSim from PyPI:**
+   ```bash
+   pip install hydrosim
+   ```
+
+2. **Get the examples (clone repository):**
+   ```bash
+   git clone https://github.com/jlillywh/hydrosim.git
+   cd hydrosim
+   ```
+
 ### Quick Start (5 minutes)
 
-1. Make sure you've installed HydroSim and its dependencies (see main README.md)
-
-2. Run the quick start example:
+1. Run the quick start example:
    ```bash
    python examples/quick_start.py
    ```
