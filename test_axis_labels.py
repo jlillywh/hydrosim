@@ -25,14 +25,14 @@ def test_axis_label_formatting():
     # Test cases
     test_cases = [
         # (input, expected_output)
-        ("Temperature (°C)", "Temperature (&deg;C)"),
-        ("Flow (m³/day)", "Flow (m&sup3;/day)"),
-        ("Area (m²)", "Area (m&sup2;)"),
-        ("Pressure (μPa)", "Pressure (&micro;Pa)"),
-        ("Change (±5%)", "Change (&plusmn;5%)"),
+        ("Temperature (°C)", "Temperature (degC)"),
+        ("Flow (m³/day)", "Flow (m^3/day)"),
+        ("Area (m²)", "Area (m^2)"),
+        ("Pressure (μPa)", "Pressure (uPa)"),
+        ("Change (±5%)", "Change (+/-5%)"),
         ("Normal text", "Normal text"),  # Should remain unchanged
         ("", ""),  # Empty string
-        ("Multiple °C and m³", "Multiple &deg;C and m&sup3;"),
+        ("Multiple °C and m³", "Multiple degC and m^3"),
     ]
     
     print("🧪 Testing axis label formatting...")

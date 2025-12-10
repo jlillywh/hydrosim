@@ -39,40 +39,40 @@ class ResultsVisualizer:
     
     def _format_axis_label(self, label: str) -> str:
         """
-        Format axis labels for proper HTML display.
+        Format axis labels for reliable display across all browsers.
         
-        Converts special characters to HTML entities to fix display issues
-        in Plotly HTML output.
+        Converts special characters to plain ASCII alternatives that display
+        correctly in all environments without encoding issues.
         
         Args:
             label: Raw axis label string
             
         Returns:
-            Formatted label with HTML entities
+            Formatted label with ASCII-safe characters
         """
         if not label:
             return label
             
-        # Replace common special characters with HTML entities
+        # Replace special characters with ASCII-safe alternatives
         replacements = {
-            '°': '&deg;',      # Degree symbol
-            '³': '&sup3;',     # Superscript 3
-            '²': '&sup2;',     # Superscript 2
-            '¹': '&sup1;',     # Superscript 1
-            'μ': '&micro;',    # Micro symbol
-            'α': '&alpha;',    # Alpha
-            'β': '&beta;',     # Beta
-            'γ': '&gamma;',    # Gamma
-            'δ': '&delta;',    # Delta
-            'Δ': '&Delta;',    # Capital Delta
-            '±': '&plusmn;',   # Plus-minus
-            '×': '&times;',    # Multiplication
-            '÷': '&divide;',   # Division
+            '°': 'deg',        # Degree symbol → "deg"
+            '³': '^3',         # Superscript 3 → "^3"
+            '²': '^2',         # Superscript 2 → "^2"
+            '¹': '^1',         # Superscript 1 → "^1"
+            'μ': 'u',          # Micro symbol → "u" (micro)
+            'α': 'alpha',      # Alpha → "alpha"
+            'β': 'beta',       # Beta → "beta"
+            'γ': 'gamma',      # Gamma → "gamma"
+            'δ': 'delta',      # Delta → "delta"
+            'Δ': 'Delta',      # Capital Delta → "Delta"
+            '±': '+/-',        # Plus-minus → "+/-"
+            '×': 'x',          # Multiplication → "x"
+            '÷': '/',          # Division → "/"
         }
         
         formatted_label = label
-        for char, entity in replacements.items():
-            formatted_label = formatted_label.replace(char, entity)
+        for char, replacement in replacements.items():
+            formatted_label = formatted_label.replace(char, replacement)
             
         return formatted_label
     
