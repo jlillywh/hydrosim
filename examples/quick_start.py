@@ -17,7 +17,7 @@ import webbrowser
 import os
 from hydrosim.config import YAMLParser
 from hydrosim import (
-    SimulationEngine, LinearProgrammingSolver, ResultsWriter, ClimateEngine,
+    SimulationEngine, ResultsWriter, ClimateEngine,
     visualize_network, visualize_results
 )
 
@@ -47,8 +47,8 @@ def run_simple_example():
     # Step 3: Set up simulation engine
     print("\n[Step 3] Setting up simulation engine...")
     climate_engine = ClimateEngine(climate_source, site_config, datetime(2024, 1, 1))
-    solver = LinearProgrammingSolver()
-    engine = SimulationEngine(network, climate_engine, solver)
+    # Solver is auto-selected based on optimization config in YAML
+    engine = SimulationEngine(network, climate_engine)
     print("   ✓ Simulation engine initialized")
     
     # Step 4: Create results writer
@@ -172,8 +172,8 @@ def run_complex_example():
     # Step 3: Set up simulation engine
     print("\n[Step 3] Setting up simulation engine...")
     climate_engine = ClimateEngine(climate_source, site_config, datetime(2024, 1, 1))
-    solver = LinearProgrammingSolver()
-    engine = SimulationEngine(network, climate_engine, solver)
+    # Solver is auto-selected based on optimization config in YAML
+    engine = SimulationEngine(network, climate_engine)
     print("   ✓ Simulation engine initialized")
     
     # Step 4: Create results writer (JSON format for complex networks)

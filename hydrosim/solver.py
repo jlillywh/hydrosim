@@ -91,6 +91,230 @@ class NetworkSolver(ABC):
         pass
 
 
+class LookaheadSolver(NetworkSolver):
+    """
+    Look-ahead network flow solver using time-expanded graphs.
+    
+    This solver implements multi-timestep optimization by creating a time-expanded
+    graph that represents multiple timesteps simultaneously. It uses a rolling
+    horizon approach where decisions for the current timestep are applied, then
+    the horizon advances by one timestep.
+    
+    Key features:
+    - Configurable look-ahead horizon (1 to N days)
+    - Time-expanded graph with carryover links between timesteps
+    - Perfect foresight assumption for future inflows/demands
+    - Rolling horizon optimization
+    - Hedging capability (saving water for future high-priority needs)
+    """
+    
+    def __init__(self, lookahead_days: int = 1, carryover_cost: float = -1.0):
+        """
+        Initialize look-ahead solver.
+        
+        Args:
+            lookahead_days: Number of days to look ahead (1 = myopic behavior)
+            carryover_cost: Cost for storing water between timesteps (hedging penalty)
+        """
+        validate_cost_hierarchy()
+        self.lookahead_days = lookahead_days
+        self.carryover_cost = carryover_cost
+        self.base_solver = LinearProgrammingSolver()  # Use LP solver for expanded graph
+        
+        # Cache for future data (perfect foresight)
+        self.future_inflows = {}  # {node_id: [inflow_t0, inflow_t1, ...]}
+        self.future_demands = {}  # {node_id: [demand_t0, demand_t1, ...]}
+        self.future_climate = []  # [climate_t0, climate_t1, ...]
+    
+    def set_future_data(self, future_inflows: Dict[str, List[float]], 
+                       future_demands: Dict[str, List[float]],
+                       future_climate: List[any] = None):
+        """
+        Set future data for perfect foresight optimization.
+        
+        Args:
+            future_inflows: Dict mapping source node_id to list of future inflows
+            future_demands: Dict mapping demand node_id to list of future demands  
+            future_climate: List of future climate states (optional)
+        """
+        self.future_inflows = future_inflows
+        self.future_demands = future_demands
+        self.future_climate = future_climate or []
+    
+    def solve(self, nodes: List['Node'], links: List['Link'], 
+              constraints: Dict[str, Tuple[float, float, float]]) -> Dict[str, float]:
+        """
+        Solve using time-expanded graph for look-ahead optimization.
+        
+        Args:
+            nodes: List of all nodes in the current network
+            links: List of all links in the current network
+            constraints: Dict mapping link_id to (q_min, q_max, cost)
+        
+        Returns:
+            Dict mapping link_id to allocated flow (only for current timestep)
+        """
+        if self.lookahead_days == 1:
+            # Fallback to myopic behavior for single timestep
+            return self.base_solver.solve(nodes, links, constraints)
+        
+        # Build time-expanded graph
+        expanded_nodes, expanded_links, expanded_constraints = self._build_time_expanded_graph(
+            nodes, links, constraints
+        )
+        
+        # Solve the expanded problem
+        expanded_flows = self.base_solver.solve(expanded_nodes, expanded_links, expanded_constraints)
+        
+        # Extract flows for current timestep (t=0)
+        current_flows = {}
+        for link_id, flow in expanded_flows.items():
+            if link_id.endswith('_t0'):  # Current timestep links
+                original_link_id = link_id[:-3]  # Remove '_t0' suffix
+                current_flows[original_link_id] = flow
+        
+        return current_flows
+    
+    def _build_time_expanded_graph(self, nodes: List['Node'], links: List['Link'],
+                                  constraints: Dict[str, Tuple[float, float, float]]) \
+                                  -> Tuple[List['Node'], List['Link'], Dict[str, Tuple[float, float, float]]]:
+        """
+        Build time-expanded graph for multi-timestep optimization.
+        
+        Creates a "super-graph" with nodes for each timestep and carryover links
+        connecting storage nodes across timesteps.
+        
+        Args:
+            nodes: Original network nodes
+            links: Original network links
+            constraints: Original link constraints
+            
+        Returns:
+            Tuple of (expanded_nodes, expanded_links, expanded_constraints)
+        """
+        from hydrosim.nodes import StorageNode, SourceNode, DemandNode, JunctionNode
+        from hydrosim.links import Link
+        
+        expanded_nodes = []
+        expanded_links = []
+        expanded_constraints = {}
+        
+        # Create nodes for each timestep
+        timestep_nodes = {}  # {timestep: {node_id: node}}
+        
+        for t in range(self.lookahead_days):
+            timestep_nodes[t] = {}
+            
+            for node in nodes:
+                # Create time-indexed node
+                time_node_id = f"{node.node_id}_t{t}"
+                
+                if isinstance(node, StorageNode):
+                    # Storage nodes: adjust initial storage for future timesteps
+                    if t == 0:
+                        initial_storage = node.storage  # Current storage
+                    else:
+                        # For future timesteps, use current storage as initial
+                        # (will be updated by carryover links)
+                        initial_storage = node.storage
+                    
+                    time_node = StorageNode(
+                        time_node_id,
+                        initial_storage,
+                        node.eav_table,
+                        max_storage=node.max_storage,
+                        min_storage=node.min_storage
+                    )
+                
+                elif isinstance(node, SourceNode):
+                    # Source nodes: use future inflow data if available
+                    if node.node_id in self.future_inflows and t < len(self.future_inflows[node.node_id]):
+                        future_inflow = self.future_inflows[node.node_id][t]
+                    else:
+                        future_inflow = node.inflow  # Fallback to current inflow
+                    
+                    # Create a simple source with fixed inflow
+                    time_node = SourceNode(time_node_id, None)
+                    time_node.inflow = future_inflow
+                
+                elif isinstance(node, DemandNode):
+                    # Demand nodes: use future demand data if available
+                    if node.node_id in self.future_demands and t < len(self.future_demands[node.node_id]):
+                        future_demand = self.future_demands[node.node_id][t]
+                    else:
+                        future_demand = node.request  # Fallback to current demand
+                    
+                    time_node = DemandNode(time_node_id, node.demand_model)
+                    time_node.request = future_demand
+                
+                else:  # JunctionNode
+                    time_node = JunctionNode(time_node_id)
+                
+                # Initialize connection lists
+                time_node.inflows = []
+                time_node.outflows = []
+                
+                timestep_nodes[t][node.node_id] = time_node
+                expanded_nodes.append(time_node)
+        
+        # Create links for each timestep
+        for t in range(self.lookahead_days):
+            for link in links:
+                # Create time-indexed link
+                time_link_id = f"{link.link_id}_t{t}"
+                source_node = timestep_nodes[t][link.source.node_id]
+                target_node = timestep_nodes[t][link.target.node_id]
+                
+                time_link = Link(
+                    time_link_id,
+                    source_node,
+                    target_node,
+                    link.physical_capacity,
+                    link.cost
+                )
+                
+                # Copy control and hydraulic models
+                time_link.control = link.control
+                time_link.hydraulic_model = link.hydraulic_model
+                
+                expanded_links.append(time_link)
+                
+                # Add to constraints
+                if link.link_id in constraints:
+                    expanded_constraints[time_link_id] = constraints[link.link_id]
+                else:
+                    # Default constraints
+                    expanded_constraints[time_link_id] = (0.0, link.physical_capacity, link.cost)
+        
+        # Create carryover links between timesteps for storage nodes
+        for t in range(self.lookahead_days - 1):
+            for node in nodes:
+                if isinstance(node, StorageNode):
+                    # Create carryover link from t to t+1
+                    carryover_link_id = f"{node.node_id}_carryover_t{t}_to_t{t+1}"
+                    source_node = timestep_nodes[t][node.node_id]
+                    target_node = timestep_nodes[t+1][node.node_id]
+                    
+                    carryover_link = Link(
+                        carryover_link_id,
+                        source_node,
+                        target_node,
+                        node.max_storage,  # Maximum carryover is storage capacity
+                        self.carryover_cost  # Hedging penalty
+                    )
+                    
+                    expanded_links.append(carryover_link)
+                    
+                    # Add to constraints
+                    expanded_constraints[carryover_link_id] = (
+                        node.min_storage,  # Minimum carryover
+                        node.max_storage,  # Maximum carryover
+                        self.carryover_cost
+                    )
+        
+        return expanded_nodes, expanded_links, expanded_constraints
+
+
 class LinearProgrammingSolver(NetworkSolver):
     """
     Network flow solver using linear programming.

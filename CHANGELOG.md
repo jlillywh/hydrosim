@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2024-12-10
+
+### Added
+- **Look-ahead Optimization**: Implemented multi-timestep optimization using time-expanded graphs
+  - New `LookaheadSolver` class with configurable horizon (1-365 days)
+  - Perfect foresight assumption for future inflows and demands
+  - Rolling horizon approach for operational planning
+  - Hedging capability to save water for future high-priority demands
+- **Optimization Configuration**: Added YAML configuration section for optimization parameters
+  - `lookahead_days`: Number of days to look ahead (default: 1 for myopic behavior)
+  - `solver_type`: Solver selection (linear_programming, network_simplex)
+  - `perfect_foresight`: Enable/disable perfect foresight assumption
+  - `carryover_cost`: Cost for storing water between timesteps (hedging penalty)
+  - `rolling_horizon`: Enable/disable rolling horizon optimization
+- **Automatic Solver Selection**: SimulationEngine now auto-selects solver based on YAML config
+- **Future Data Extraction**: Added methods to extract future inflows and demands for look-ahead
+  - `TimeSeriesStrategy.get_future_values()` for source nodes
+  - `MunicipalDemand.get_future_demands()` and `AgricultureDemand.get_future_demands()` for demand nodes
+- **Comprehensive Test Suite**: Added hedging behavior validation tests
+  - Test that myopic solver fails to hedge properly
+  - Test that look-ahead solver hedges successfully
+  - Regression test ensuring `lookahead_days=1` matches myopic behavior
+
+### Changed
+- **SimulationEngine**: Constructor now accepts optional solver parameter (auto-selected if not provided)
+- **Examples**: Updated `quick_start.py` to use automatic solver selection
+- **Complex Network Example**: Added 7-day look-ahead optimization configuration
+- **Extended Inflow Data**: Created 365-day inflow dataset for year-long simulations
+
+### Fixed
+- **Issue #1**: Implemented look-ahead optimization to enable hedging decisions
+- **Solver Integration**: Proper integration between look-ahead solver and simulation engine
+- **State Management**: Correct handling of storage updates with look-ahead optimization
+
 ## [0.3.1] - 2024-12-10
 
 ### Added

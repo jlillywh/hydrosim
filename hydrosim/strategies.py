@@ -60,6 +60,34 @@ class TimeSeriesStrategy(GeneratorStrategy):
         value = self.data.iloc[self.current_index][self.column]
         self.current_index += 1
         return float(value)
+    
+    def get_future_values(self, num_timesteps: int) -> List[float]:
+        """
+        Get future values for look-ahead optimization.
+        
+        Args:
+            num_timesteps: Number of future timesteps to extract
+            
+        Returns:
+            List of future inflow values
+        """
+        future_values = []
+        start_index = self.current_index
+        
+        for i in range(num_timesteps):
+            index = start_index + i
+            if index < len(self.data):
+                value = self.data.iloc[index][self.column]
+                future_values.append(float(value))
+            else:
+                # If we run out of data, repeat the last available value
+                if len(self.data) > 0:
+                    last_value = self.data.iloc[-1][self.column]
+                    future_values.append(float(last_value))
+                else:
+                    future_values.append(0.0)
+        
+        return future_values
 
 
 class HydrologyStrategy(GeneratorStrategy):
@@ -315,6 +343,21 @@ class MunicipalDemand(DemandModel):
             Demand volume (m³)
         """
         return self.population * self.per_capita_demand
+    
+    def get_future_demands(self, num_timesteps: int) -> List[float]:
+        """
+        Get future demands for look-ahead optimization.
+        
+        For municipal demand, this is constant over time.
+        
+        Args:
+            num_timesteps: Number of future timesteps
+            
+        Returns:
+            List of future demand values
+        """
+        demand_value = self.population * self.per_capita_demand
+        return [demand_value] * num_timesteps
 
 
 class AgricultureDemand(DemandModel):
@@ -347,3 +390,33 @@ class AgricultureDemand(DemandModel):
         et_crop = self.kc * climate.et0
         # Convert from mm to m³: et_crop (mm) * area (m²) / 1000
         return et_crop * self.area / 1000.0
+    
+    def get_future_demands(self, num_timesteps: int, future_climate: List = None) -> List[float]:
+        """
+        Get future demands for look-ahead optimization.
+        
+        For agricultural demand, this depends on future ET0 values.
+        
+        Args:
+            num_timesteps: Number of future timesteps
+            future_climate: List of future climate states (optional)
+            
+        Returns:
+            List of future demand values
+        """
+        if future_climate and len(future_climate) >= num_timesteps:
+            # Use future ET0 values if available
+            future_demands = []
+            for i in range(num_timesteps):
+                climate_state = future_climate[i]
+                et_crop = self.kc * climate_state.et0
+                demand = et_crop * self.area / 1000.0
+                future_demands.append(demand)
+            return future_demands
+        else:
+            # Fallback to average ET0 if future climate not available
+            # Use a reasonable default ET0 value (5 mm/day)
+            default_et0 = 5.0
+            et_crop = self.kc * default_et0
+            demand_value = et_crop * self.area / 1000.0
+            return [demand_value] * num_timesteps

@@ -512,9 +512,17 @@ class YAMLParser:
         author = self.config.get('author')
         viz_config = self.config.get('visualization')
         
+        # Parse simulation configuration
+        sim_config = self._parse_simulation_config()
+        
+        # Parse optimization configuration
+        opt_config = self._parse_optimization_config()
+        
         # Create network graph
         network = NetworkGraph(model_name=model_name, author=author)
         network.viz_config = viz_config
+        network.sim_config = sim_config
+        network.opt_config = opt_config
         
         # Parse and add nodes
         nodes_config = self.config.get('nodes', {})
@@ -1047,3 +1055,124 @@ class YAMLParser:
         
         else:
             raise ValueError(f"Unknown hydraulic type for link {link_id}: {hydraulic_type}")
+    
+    def _parse_simulation_config(self) -> Dict[str, Any]:
+        """
+        Parse simulation configuration section.
+        
+        Returns:
+            Dictionary with simulation parameters (start_date, num_timesteps, end_date)
+        """
+        sim_config = self.config.get('simulation', {})
+        
+        # Default values
+        result = {
+            'start_date': '2024-01-01',
+            'num_timesteps': 30
+        }
+        
+        # Parse start_date
+        if 'start_date' in sim_config:
+            start_date_str = sim_config['start_date']
+            try:
+                # Validate date format
+                datetime.strptime(start_date_str, '%Y-%m-%d')
+                result['start_date'] = start_date_str
+            except ValueError:
+                raise ValueError(f"Invalid start_date format: {start_date_str}. Expected YYYY-MM-DD")
+        
+        # Parse duration - either num_timesteps or end_date
+        if 'num_timesteps' in sim_config and 'end_date' in sim_config:
+            raise ValueError("Cannot specify both 'num_timesteps' and 'end_date' in simulation config")
+        
+        if 'num_timesteps' in sim_config:
+            try:
+                num_timesteps = int(sim_config['num_timesteps'])
+                if num_timesteps <= 0:
+                    raise ValueError("num_timesteps must be positive")
+                result['num_timesteps'] = num_timesteps
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid num_timesteps: {sim_config['num_timesteps']}. Must be a positive integer")
+        
+        elif 'end_date' in sim_config:
+            end_date_str = sim_config['end_date']
+            try:
+                # Validate date format
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+                start_date = datetime.strptime(result['start_date'], '%Y-%m-%d')
+                
+                # Calculate number of days
+                num_days = (end_date - start_date).days
+                if num_days <= 0:
+                    raise ValueError("end_date must be after start_date")
+                
+                result['end_date'] = end_date_str
+                result['num_timesteps'] = num_days
+            except ValueError as e:
+                if "time data" in str(e):
+                    raise ValueError(f"Invalid end_date format: {end_date_str}. Expected YYYY-MM-DD")
+                else:
+                    raise e
+        
+        return result
+    
+    def _parse_optimization_config(self) -> Dict[str, Any]:
+        """
+        Parse optimization configuration section for look-ahead optimization.
+        
+        Returns:
+            Dictionary with optimization parameters (lookahead_days, solver_type, etc.)
+        """
+        opt_config = self.config.get('optimization', {})
+        
+        # Default values
+        result = {
+            'lookahead_days': 1,  # Default to current myopic behavior
+            'solver_type': 'linear_programming',  # Default solver
+            'perfect_foresight': True,  # Assume perfect foresight for V1
+            'carryover_cost': -1.0,  # Cost for storing water (hedging penalty)
+            'rolling_horizon': True  # Use rolling horizon approach
+        }
+        
+        # Parse lookahead_days
+        if 'lookahead_days' in opt_config:
+            try:
+                lookahead_days = int(opt_config['lookahead_days'])
+                if lookahead_days < 1:
+                    raise ValueError("lookahead_days must be at least 1")
+                if lookahead_days > 365:
+                    raise ValueError("lookahead_days cannot exceed 365 (performance limitation)")
+                result['lookahead_days'] = lookahead_days
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid lookahead_days: {opt_config['lookahead_days']}. Must be a positive integer between 1 and 365")
+        
+        # Parse solver_type
+        if 'solver_type' in opt_config:
+            solver_type = opt_config['solver_type']
+            if solver_type not in ['linear_programming', 'network_simplex']:
+                raise ValueError(f"Invalid solver_type: {solver_type}. Must be 'linear_programming' or 'network_simplex'")
+            result['solver_type'] = solver_type
+        
+        # Parse perfect_foresight
+        if 'perfect_foresight' in opt_config:
+            perfect_foresight = opt_config['perfect_foresight']
+            if not isinstance(perfect_foresight, bool):
+                raise ValueError("perfect_foresight must be a boolean (true/false)")
+            result['perfect_foresight'] = perfect_foresight
+        
+        # Parse carryover_cost (hedging penalty)
+        if 'carryover_cost' in opt_config:
+            try:
+                carryover_cost = float(opt_config['carryover_cost'])
+                result['carryover_cost'] = carryover_cost
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid carryover_cost: {opt_config['carryover_cost']}. Must be a number")
+        
+        # Parse rolling_horizon
+        if 'rolling_horizon' in opt_config:
+            rolling_horizon = opt_config['rolling_horizon']
+            if not isinstance(rolling_horizon, bool):
+                raise ValueError("rolling_horizon must be a boolean (true/false)")
+            result['rolling_horizon'] = rolling_horizon
+        
+        return result

@@ -14,6 +14,19 @@
 model_name: "Complex Multi-Reservoir System"
 author: "HydroSim Team"
 
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"
+  num_timesteps: 365
+
+# Optimization configuration for look-ahead
+optimization:
+  lookahead_days: 7  # 7-day look-ahead horizon
+  solver_type: linear_programming
+  perfect_foresight: true
+  carryover_cost: -1.0  # Cost for storing water (hedging penalty)
+  rolling_horizon: true
+
 visualization:
   # Network map configuration
   network_map:
@@ -90,7 +103,7 @@ nodes:
   catchment:
     type: source
     strategy: timeseries
-    filepath: inflow_data.csv
+    filepath: inflow_data_365.csv
     column: inflow
   
   # Junction for flow routing

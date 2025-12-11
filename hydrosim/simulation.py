@@ -13,7 +13,7 @@ from hydrosim.climate_engine import ClimateEngine
 from hydrosim.config import NetworkGraph
 from hydrosim.nodes import Node, StorageNode, DemandNode, SourceNode
 from hydrosim.links import Link
-from hydrosim.solver import NetworkSolver
+from hydrosim.solver import NetworkSolver, LinearProgrammingSolver, LookaheadSolver
 from hydrosim.exceptions import (
     NegativeStorageError, 
     InfeasibleNetworkError, 
@@ -46,19 +46,27 @@ class SimulationEngine:
     def __init__(self,
                  network: NetworkGraph,
                  climate_engine: ClimateEngine,
-                 solver: NetworkSolver):
+                 solver: NetworkSolver = None):
         """
         Initialize simulation engine.
         
         Args:
             network: Network graph with nodes and links
             climate_engine: Climate engine for environmental drivers
-            solver: Network flow solver for optimization
+            solver: Network flow solver for optimization (optional, auto-selected based on config)
         """
         self.network = network
         self.climate_engine = climate_engine
+        
+        # Auto-select solver based on optimization configuration
+        if solver is None:
+            solver = self._create_solver_from_config()
+        
         self.solver = solver
         self.current_timestep = 0
+        
+        # Initialize future data cache for look-ahead optimization
+        self._future_data_prepared = False
     
     def step(self) -> Dict[str, any]:
         """
@@ -200,6 +208,9 @@ class SimulationEngine:
         """
         logger.info(f"Starting simulation for {num_timesteps} timesteps")
         
+        # Prepare future data for look-ahead optimization
+        self._prepare_future_data(num_timesteps)
+        
         results = []
         try:
             for i in range(num_timesteps):
@@ -214,6 +225,83 @@ class SimulationEngine:
         
         logger.info(f"Simulation completed successfully: {num_timesteps} timesteps")
         return results
+    
+    def _create_solver_from_config(self) -> NetworkSolver:
+        """
+        Create appropriate solver based on network optimization configuration.
+        
+        Returns:
+            NetworkSolver instance (LinearProgrammingSolver or LookaheadSolver)
+        """
+        # Get optimization config from network (set during YAML parsing)
+        opt_config = getattr(self.network, 'opt_config', {})
+        lookahead_days = opt_config.get('lookahead_days', 1)
+        carryover_cost = opt_config.get('carryover_cost', -1.0)
+        
+        if lookahead_days == 1:
+            # Use standard myopic solver
+            logger.info("Using LinearProgrammingSolver (myopic optimization)")
+            return LinearProgrammingSolver()
+        else:
+            # Use look-ahead solver
+            logger.info(f"Using LookaheadSolver with {lookahead_days}-day horizon")
+            return LookaheadSolver(
+                lookahead_days=lookahead_days,
+                carryover_cost=carryover_cost
+            )
+    
+    def _prepare_future_data(self, num_timesteps: int) -> None:
+        """
+        Prepare future data for look-ahead optimization.
+        
+        This method extracts future inflows and demands from the network's
+        source and demand nodes for perfect foresight optimization.
+        
+        Args:
+            num_timesteps: Total number of timesteps to simulate
+        """
+        if self._future_data_prepared or not isinstance(self.solver, LookaheadSolver):
+            return
+        
+        logger.info("Preparing future data for look-ahead optimization...")
+        
+        future_inflows = {}
+        future_demands = {}
+        future_climate = []
+        
+        # Extract future inflows from source nodes
+        for node in self.network.nodes.values():
+            if node.node_type == "source":
+                # Get future inflows from the node's strategy
+                if hasattr(node.strategy, 'get_future_values'):
+                    # For time series strategies, get future values
+                    future_values = node.strategy.get_future_values(num_timesteps)
+                    future_inflows[node.node_id] = future_values
+                else:
+                    # For other strategies, assume constant current inflow
+                    future_inflows[node.node_id] = [node.inflow] * num_timesteps
+        
+        # Extract future demands from demand nodes
+        for node in self.network.nodes.values():
+            if node.node_type == "demand":
+                # Get future demands from the node's demand model
+                if hasattr(node.demand_model, 'get_future_demands'):
+                    # For time-varying demand models, get future values
+                    future_values = node.demand_model.get_future_demands(num_timesteps)
+                    future_demands[node.node_id] = future_values
+                else:
+                    # For static demand models, assume constant current request
+                    future_demands[node.node_id] = [node.request] * num_timesteps
+        
+        # Extract future climate data
+        if hasattr(self.climate_engine, 'get_future_climate'):
+            future_climate = self.climate_engine.get_future_climate(num_timesteps)
+        
+        # Set future data on the look-ahead solver
+        self.solver.set_future_data(future_inflows, future_demands, future_climate)
+        self._future_data_prepared = True
+        
+        logger.info(f"Future data prepared: {len(future_inflows)} sources, {len(future_demands)} demands")
     
     def get_current_timestep(self) -> int:
         """

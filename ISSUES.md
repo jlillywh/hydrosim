@@ -1,46 +1,88 @@
 # HydroSim Issues Tracker
 
-## 🐛 Bug Fixes
+## ✅ Completed Issues
+
+- [x] **Issue #1**: Implement Look-ahead Optimization
+  - **Status**: Closed ✅
+  - **Priority**: High
+  - **Type**: Enhancement
+  - **Completed**: 2024-12-10
+  - **Version**: v0.4.0
+  - **Notes**: Successfully implemented multi-timestep optimization using time-expanded graphs. Added LookaheadSolver class with configurable horizon, perfect foresight, and hedging capability. All tests passing.
+
+- [x] **Issue #2**: Implement subplot-specific legends
+  - **Status**: Closed ✅
+  - **Priority**: Medium
+  - **Type**: Enhancement
+  - **Completed**: 2024-12-10
+  - **Version**: v0.3.1
+  - **Notes**: Implemented custom legend system using HTML-styled annotations with proper positioning and visual indicators.
+
+- [x] **Issue #3**: Fix plot axis title character encoding
+  - **Status**: Closed ✅
+  - **Priority**: Medium
+  - **Type**: Bug
+  - **Completed**: 2024-12-10
+  - **Version**: v0.3.1
+  - **Notes**: Fixed Unicode character corruption by implementing ASCII-safe formatting and updating all YAML files.
+
+- [x] **Issue #4**: Fix network graph spacing
+  - **Status**: Closed ✅
+  - **Priority**: Low
+  - **Type**: Bug
+  - **Completed**: 2024-12-10
+  - **Version**: v0.3.1
+  - **Notes**: Fixed network graph spacing with 3x reduction in node spacing and proper axis ranges.
+
+- [x] **Issue #5**: Implement simulation date configuration in YAML files
+  - **Status**: Closed ✅
+  - **Priority**: Medium
+  - **Type**: Enhancement
+  - **Completed**: 2024-12-10
+  - **Version**: v0.3.1
+  - **Notes**: Added simulation configuration parsing with date range and duration options.
+
+## 🐛 Open Bug Fixes
 
 ### High Priority
-- [ ] **Issue #1**: [Description of critical bug]
+- [ ] **Issue #6**: [Description of critical bug]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
   - **Notes**: 
 
 ### Medium Priority
-- [ ] **Issue #2**: [Description of bug]
+- [ ] **Issue #7**: [Description of bug]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
   - **Notes**: 
 
 ### Low Priority
-- [ ] **Issue #3**: [Description of minor bug]
+- [ ] **Issue #8**: [Description of minor bug]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
   - **Notes**: 
 
-## ✨ Enhancements
+## ✨ Open Enhancements
 
 ### High Priority
-- [ ] **Issue #4**: [Description of important enhancement]
+- [ ] **Issue #9**: [Description of important enhancement]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
   - **Notes**: 
 
 ### Medium Priority
-- [ ] **Issue #5**: [Description of enhancement]
+- [ ] **Issue #10**: [Description of enhancement]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
   - **Notes**: 
 
 ### Low Priority
-- [ ] **Issue #6**: [Description of nice-to-have enhancement]
+- [ ] **Issue #11**: [Description of nice-to-have enhancement]
   - **Status**: Open
   - **Assignee**: 
   - **Branch**: 
