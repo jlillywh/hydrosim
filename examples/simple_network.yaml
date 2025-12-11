@@ -13,6 +13,13 @@
 model_name: "Simple Water Network Example"
 author: "HydroSim Team"
 
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"  # Simulation start date (YYYY-MM-DD)
+  end_date: "2024-01-30"    # Simulation end date (YYYY-MM-DD)
+  # Alternative: use num_timesteps instead of end_date
+  # num_timesteps: 30       # Number of days to simulate
+
 visualization:
   # Network map configuration
   network_map:
@@ -30,7 +37,7 @@ visualization:
         label: "Precipitation (mm/day)"
         variables: [precip]
       y2_axis:
-        label: "Temperature (°C)"
+        label: "Temperature (degC)"
         variables: [tmax, tmin]
     
     # Source/catchment runoff
@@ -38,7 +45,7 @@ visualization:
       auto: true
       title_template: "{node_id} Runoff"
       y1_axis:
-        label: "Runoff (m³/day)"
+        label: "Runoff (m^3/day)"
         variables: [inflow]
     
     # Reservoir operations
@@ -46,10 +53,10 @@ visualization:
       auto: true
       title_template: "{node_id} Operations"
       y1_axis:
-        label: "Storage (m³)"
+        label: "Storage (m^3)"
         variables: [storage]
       y2_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [inflow, outflow, evap_loss, spill]
     
     # Demand supply vs request
@@ -57,7 +64,7 @@ visualization:
       auto: true
       title_template: "{node_id} Supply vs Demand"
       y1_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [request, delivered, deficit]
   
   # Layout settings

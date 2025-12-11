@@ -46,10 +46,12 @@ def run_simple_example():
     
     # Step 3: Set up simulation engine
     print("\n[Step 3] Setting up simulation engine...")
-    climate_engine = ClimateEngine(climate_source, site_config, datetime(2024, 1, 1))
+    sim_config = network.simulation_config
+    start_date = sim_config['start_date']
+    climate_engine = ClimateEngine(climate_source, site_config, start_date)
     solver = LinearProgrammingSolver()
     engine = SimulationEngine(network, climate_engine, solver)
-    print("   ✓ Simulation engine initialized")
+    print(f"   ✓ Simulation engine initialized (start: {start_date.strftime('%Y-%m-%d')})")
     
     # Step 4: Create results writer
     print("\n[Step 4] Creating results writer...")
@@ -58,8 +60,9 @@ def run_simple_example():
     
     # Step 5: Run simulation
     print("\n[Step 5] Running simulation...")
-    num_days = 30
-    print(f"   Simulating {num_days} days...")
+    num_days = sim_config['num_timesteps']
+    end_info = f"to {sim_config['end_date'].strftime('%Y-%m-%d')}" if sim_config['end_date'] else f"for {num_days} days"
+    print(f"   Simulating from {start_date.strftime('%Y-%m-%d')} {end_info}...")
     
     for day in range(num_days):
         result = engine.step()
@@ -171,10 +174,12 @@ def run_complex_example():
     
     # Step 3: Set up simulation engine
     print("\n[Step 3] Setting up simulation engine...")
-    climate_engine = ClimateEngine(climate_source, site_config, datetime(2024, 1, 1))
+    sim_config = network.simulation_config
+    start_date = sim_config['start_date']
+    climate_engine = ClimateEngine(climate_source, site_config, start_date)
     solver = LinearProgrammingSolver()
     engine = SimulationEngine(network, climate_engine, solver)
-    print("   ✓ Simulation engine initialized")
+    print(f"   ✓ Simulation engine initialized (start: {start_date.strftime('%Y-%m-%d')})")
     
     # Step 4: Create results writer (JSON format for complex networks)
     print("\n[Step 4] Creating results writer...")
@@ -183,8 +188,9 @@ def run_complex_example():
     
     # Step 5: Run simulation
     print("\n[Step 5] Running simulation...")
-    num_days = 30
-    print(f"   Simulating {num_days} days...")
+    num_days = sim_config['num_timesteps']
+    end_info = f"to {sim_config['end_date'].strftime('%Y-%m-%d')}" if sim_config['end_date'] else f"for {num_days} days"
+    print(f"   Simulating from {start_date.strftime('%Y-%m-%d')} {end_info}...")
     
     for day in range(num_days):
         result = engine.step()

@@ -4,16 +4,6 @@
 
 ## 🐛 Bug Fixes
 
-### Medium Priority
-- [ ] **Issue #3**: Fix characters in plot axis titles
-  - **Status**: Open
-  - **Priority**: Medium
-  - **Labels**: bug
-  - **GitHub**: https://github.com/jlillywh/hydrosim/issues/3
-  - **Assignee**: 
-  - **Branch**: 
-  - **Notes**: chart axis (y1 and y2) titles have strange characters in place of special characters:  instead of Temperature (deg C) it shows a weird A symbol where the degree should go  instead of m^3/day it shows ...
-
 ## ✨ Enhancements
 
 ### Medium Priority

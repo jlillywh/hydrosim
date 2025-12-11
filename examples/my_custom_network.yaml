@@ -4,6 +4,13 @@
 model_name: "My Custom Water Network"
 author: "Your Name"
 
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"  # Simulation start date (YYYY-MM-DD)
+  num_timesteps: 60         # Number of days to simulate (2 months)
+  # Alternative: use end_date instead of num_timesteps
+  # end_date: "2024-03-01"  # Simulation end date (YYYY-MM-DD)
+
 visualization:
   network_map:
     width: 600
@@ -18,24 +25,24 @@ visualization:
         label: "Precipitation (mm/day)"
         variables: [precip]
       y2_axis:
-        label: "Temperature (°C)"
+        label: "Temperature (C)"
         variables: [tmax, tmin]
     
     - type: reservoir
       auto: true
       title_template: "{node_id} Operations"
       y1_axis:
-        label: "Storage (m³)"
+        label: "Storage (m^3)"
         variables: [storage]
       y2_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [inflow, outflow, evap_loss, spill]
     
     - type: demand
       auto: true
       title_template: "{node_id} Supply vs Demand"
       y1_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [request, delivered, deficit]
   
   layout:

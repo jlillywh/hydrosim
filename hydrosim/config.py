@@ -162,6 +162,7 @@ class NetworkGraph:
         self.links: Dict[str, Link] = {}
         self.model_name = model_name
         self.author = author
+        self.simulation_config = None  # Will be set by parser
     
     def add_node(self, node: Node) -> None:
         """
@@ -507,6 +508,9 @@ class YAMLParser:
         # Parse climate configuration first (needed for some strategies)
         climate_source, site_config = self._parse_climate_config()
         
+        # Parse simulation configuration
+        simulation_config = self._parse_simulation_config()
+        
         # Parse optional metadata
         model_name = self.config.get('model_name')
         author = self.config.get('author')
@@ -515,6 +519,7 @@ class YAMLParser:
         # Create network graph
         network = NetworkGraph(model_name=model_name, author=author)
         network.viz_config = viz_config
+        network.simulation_config = simulation_config
         
         # Parse and add nodes
         nodes_config = self.config.get('nodes', {})
@@ -768,6 +773,92 @@ class YAMLParser:
             raise ValueError(f"Invalid start_date format: {start_date_str}. Expected YYYY-MM-DD")
         
         return WGENClimateSource(params, start_date)
+    
+    def _parse_simulation_config(self) -> Dict[str, Any]:
+        """
+        Parse simulation configuration section.
+        
+        Returns:
+            Dictionary containing simulation configuration with keys:
+                - start_date: datetime object for simulation start
+                - end_date: datetime object for simulation end (optional)
+                - num_timesteps: number of timesteps to simulate (optional)
+            
+        Raises:
+            ValueError: If simulation configuration is invalid
+        """
+        simulation_config = self.config.get('simulation', {})
+        
+        # Default values
+        config = {
+            'start_date': datetime(2024, 1, 1),  # Default start date
+            'end_date': None,
+            'num_timesteps': None
+        }
+        
+        # Parse start_date (optional, defaults to 2024-01-01)
+        if 'start_date' in simulation_config:
+            start_date_str = simulation_config['start_date']
+            try:
+                config['start_date'] = datetime.strptime(start_date_str, '%Y-%m-%d')
+            except ValueError:
+                raise ValueError(
+                    f"Invalid start_date format: '{start_date_str}'. "
+                    f"Expected format: YYYY-MM-DD (e.g., '2024-01-01')"
+                )
+        
+        # Parse end_date (optional)
+        if 'end_date' in simulation_config:
+            end_date_str = simulation_config['end_date']
+            try:
+                config['end_date'] = datetime.strptime(end_date_str, '%Y-%m-%d')
+            except ValueError:
+                raise ValueError(
+                    f"Invalid end_date format: '{end_date_str}'. "
+                    f"Expected format: YYYY-MM-DD (e.g., '2024-12-31')"
+                )
+        
+        # Parse num_timesteps (optional)
+        if 'num_timesteps' in simulation_config:
+            try:
+                config['num_timesteps'] = int(simulation_config['num_timesteps'])
+                if config['num_timesteps'] <= 0:
+                    raise ValueError("num_timesteps must be a positive integer")
+            except (ValueError, TypeError):
+                raise ValueError(
+                    f"Invalid num_timesteps: '{simulation_config['num_timesteps']}'. "
+                    f"Must be a positive integer."
+                )
+        
+        # Validate configuration logic
+        if config['end_date'] and config['num_timesteps']:
+            raise ValueError(
+                "Cannot specify both 'end_date' and 'num_timesteps'. "
+                "Use either end_date for date-based simulation or "
+                "num_timesteps for fixed-length simulation."
+            )
+        
+        if config['end_date'] and config['end_date'] <= config['start_date']:
+            raise ValueError(
+                f"end_date ({config['end_date'].strftime('%Y-%m-%d')}) must be "
+                f"after start_date ({config['start_date'].strftime('%Y-%m-%d')})"
+            )
+        
+        # Calculate num_timesteps from dates if end_date is provided
+        if config['end_date'] and not config['num_timesteps']:
+            delta = config['end_date'] - config['start_date']
+            config['num_timesteps'] = delta.days
+            if config['num_timesteps'] <= 0:
+                raise ValueError(
+                    f"Calculated simulation period is {config['num_timesteps']} days. "
+                    f"end_date must be at least 1 day after start_date."
+                )
+        
+        # Default to 30 days if neither end_date nor num_timesteps specified
+        if not config['num_timesteps']:
+            config['num_timesteps'] = 30
+        
+        return config
     
     def _parse_node(self, node_id: str, node_params: Dict[str, Any]) -> Node:
         """

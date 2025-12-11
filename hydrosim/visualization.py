@@ -25,7 +25,10 @@ def _calculate_layout(network: NetworkGraph, layout: str) -> Dict[str, Tuple[flo
     
     Args:
         network: NetworkGraph to layout
-        layout: Layout algorithm ('circular', 'hierarchical')
+        layout: Layout algorithm ('circular', 'hierarchical', 'compact')
+            - 'circular': Nodes arranged in a compact circle
+            - 'hierarchical': Sources at top, storage/junctions in middle, demands at bottom
+            - 'compact': Very tight spacing, ideal for small networks (< 10 nodes)
     
     Returns:
         Dictionary mapping node_id to (x, y) coordinates
@@ -35,13 +38,34 @@ def _calculate_layout(network: NetworkGraph, layout: str) -> Dict[str, Tuple[flo
     pos = {}
     
     if layout == 'circular':
-        # Arrange nodes in a circle
+        # Arrange nodes in a very compact circle
+        # Much smaller radius for tighter spacing
+        radius = max(0.1, min(0.3, 0.05 * math.sqrt(n)))  # Much smaller radius: 0.1 to 0.3
         for i, node_id in enumerate(nodes):
             angle = 2 * math.pi * i / n
-            pos[node_id] = (math.cos(angle), math.sin(angle))
+            pos[node_id] = (radius * math.cos(angle), radius * math.sin(angle))
+    
+    elif layout == 'compact':
+        # Ultra-compact layout for small networks (< 10 nodes)
+        # Arrange in a very tight grid or line
+        if n <= 4:
+            # Single row for very small networks
+            for i, node_id in enumerate(nodes):
+                x = (i - (n - 1) / 2) * 0.1  # Ultra-close spacing
+                pos[node_id] = (x, 0)
+        else:
+            # Ultra-compact grid for larger networks
+            cols = math.ceil(math.sqrt(n))
+            rows = math.ceil(n / cols)
+            for i, node_id in enumerate(nodes):
+                row = i // cols
+                col = i % cols
+                x = (col - (cols - 1) / 2) * 0.12  # Much tighter horizontal spacing
+                y = (row - (rows - 1) / 2) * 0.1   # Much tighter vertical spacing
+                pos[node_id] = (x, y)
     
     elif layout == 'hierarchical':
-        # Simple hierarchical layout based on node type
+        # Compact hierarchical layout based on node type
         # Sources at top, junctions/storage in middle, demands at bottom
         type_levels = {'source': 0, 'storage': 1, 'junction': 1, 'demand': 2}
         
@@ -53,19 +77,25 @@ def _calculate_layout(network: NetworkGraph, layout: str) -> Dict[str, Tuple[flo
                 levels[level] = []
             levels[level].append(node_id)
         
-        # Position nodes
+        # Calculate ultra-compact spacing
+        max_nodes_per_level = max(len(level_nodes) for level_nodes in levels.values()) if levels else 1
+        vertical_spacing = 0.2 / max(1, len(levels) - 1) if len(levels) > 1 else 0.1
+        horizontal_spacing = min(0.15, 0.4 / max(1, max_nodes_per_level - 1)) if max_nodes_per_level > 1 else 0.08
+        
+        # Position nodes with ultra-compact spacing
         for level, level_nodes in levels.items():
-            y = 1.0 - (level * 0.5)  # Top to bottom
+            y = 0.1 - (level * vertical_spacing)  # Top to bottom, much more compact
             n_level = len(level_nodes)
             for i, node_id in enumerate(level_nodes):
-                x = (i - (n_level - 1) / 2) * 0.5  # Center horizontally
+                x = (i - (n_level - 1) / 2) * horizontal_spacing  # Center horizontally, much closer together
                 pos[node_id] = (x, y)
     
     else:
-        # Default to circular
+        # Default to ultra-compact circular
+        radius = max(0.1, min(0.3, 0.05 * math.sqrt(n)))
         for i, node_id in enumerate(nodes):
             angle = 2 * math.pi * i / n
-            pos[node_id] = (math.cos(angle), math.sin(angle))
+            pos[node_id] = (radius * math.cos(angle), radius * math.sin(angle))
     
     return pos
 
@@ -83,7 +113,10 @@ def visualize_network(
         network: NetworkGraph to visualize
         width: Figure width in pixels (default: from YAML or 600)
         height: Figure height in pixels (default: from YAML or 1200)
-        layout: Layout algorithm ('circular', 'hierarchical') (default: from YAML or 'hierarchical')
+        layout: Layout algorithm ('circular', 'hierarchical', 'compact') (default: from YAML or 'hierarchical')
+            - 'circular': Nodes arranged in a compact circle
+            - 'hierarchical': Sources at top, storage/junctions in middle, demands at bottom  
+            - 'compact': Very tight spacing, ideal for small networks (< 10 nodes)
     
     Returns:
         Plotly Figure object
