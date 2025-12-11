@@ -153,57 +153,103 @@ class ResultsVisualizer:
         
         fig.update_layout(
             height=height,
-            width=width,
-            showlegend=False,  # Disable global legend - we'll create custom ones
+            width=width + 250,  # Add extra width for custom legends
+            showlegend=False,  # Disable global legend - we'll use custom annotations
             hovermode='x unified'
         )
         
         # Add custom legends for each subplot
-        self._add_custom_subplot_legends(fig, expanded_plots)
+        self._add_custom_legends(fig, expanded_plots)
         
         return fig
     
-    def _add_custom_subplot_legends(self, fig: go.Figure, plots_config: List[Dict]) -> None:
+    def _add_custom_legends(self, fig: go.Figure, plots_config: List[Dict]) -> None:
         """Add custom legend annotations for each subplot."""
         n_plots = len(plots_config)
         
-        # Collect traces by subplot (legendgroup)
+        # Group traces by their legendgroup (subplot)
         traces_by_subplot = {}
         for trace in fig.data:
             if hasattr(trace, 'legendgroup') and trace.legendgroup:
-                subplot_num = int(trace.legendgroup.split('_')[1])
-                if subplot_num not in traces_by_subplot:
-                    traces_by_subplot[subplot_num] = []
-                traces_by_subplot[subplot_num].append(trace)
+                subplot_key = trace.legendgroup
+                if subplot_key not in traces_by_subplot:
+                    traces_by_subplot[subplot_key] = []
+                traces_by_subplot[subplot_key].append(trace)
         
-        # Create legend annotations for each subplot
-        for subplot_num, traces in traces_by_subplot.items():
-            # Calculate vertical position for this subplot's legend
-            legend_y_center = 1 - (subplot_num - 0.5) / n_plots
+        # Create custom legend for each subplot
+        for i, plot_config in enumerate(plots_config, start=1):
+            subplot_key = f"plot_{i}"
             
-            # Create legend text
-            legend_items = []
-            for trace in traces:
-                color = trace.line.color if hasattr(trace.line, 'color') else '#1f77b4'
-                legend_items.append(f'<span style="color:{color}">■</span> {trace.name}')
-            
-            legend_text = '<br>'.join(legend_items)
-            
-            # Add legend annotation
-            fig.add_annotation(
-                x=1.02,
-                y=legend_y_center,
-                xref="paper",
-                yref="paper",
-                text=legend_text,
-                showarrow=False,
-                xanchor="left",
-                yanchor="middle",
-                bgcolor="rgba(255,255,255,0.8)",
-                bordercolor="rgba(0,0,0,0.2)",
-                borderwidth=1,
-                font=dict(size=10)
-            )
+            if subplot_key in traces_by_subplot:
+                # Calculate vertical position for this subplot's legend
+                # Position legend in the middle of each subplot's vertical space
+                subplot_y_center = 1 - (i - 0.5) / n_plots
+                
+                # Create legend entries for this subplot
+                legend_items = []
+                plot_title = plot_config.get('title', f'Plot {i}')
+                legend_items.append(f"<b>{plot_title}</b>")
+                
+                for trace in traces_by_subplot[subplot_key]:
+                    # Get trace color and line style
+                    color = self._get_trace_color(trace)
+                    line_style = self._get_trace_line_style(trace)
+                    
+                    # Create legend entry with color indicator
+                    legend_entry = f"<span style='color:{color}'>{line_style} {trace.name}</span>"
+                    legend_items.append(legend_entry)
+                
+                # Add legend annotation
+                legend_text = "<br>".join(legend_items)
+                fig.add_annotation(
+                    x=1.02,  # Position to the right of plots
+                    y=subplot_y_center,
+                    xref="paper",
+                    yref="paper",
+                    text=legend_text,
+                    showarrow=False,
+                    xanchor="left",
+                    yanchor="middle",
+                    bgcolor="rgba(255,255,255,0.9)",
+                    bordercolor="rgba(0,0,0,0.2)",
+                    borderwidth=1,
+                    font=dict(size=10),
+                    align="left"
+                )
+    
+    def _get_trace_color(self, trace) -> str:
+        """Extract color from trace for legend display."""
+        # Check line color first
+        if hasattr(trace, 'line') and trace.line and hasattr(trace.line, 'color') and trace.line.color:
+            return trace.line.color
+        # Check marker color
+        elif hasattr(trace, 'marker') and trace.marker and hasattr(trace.marker, 'color') and trace.marker.color:
+            return trace.marker.color
+        else:
+            # Default colors from Plotly's default color sequence
+            default_colors = [
+                '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+            ]
+            # Use a hash of the trace name to consistently assign colors
+            color_index = hash(trace.name) % len(default_colors)
+            return default_colors[color_index]
+    
+    def _get_trace_line_style(self, trace) -> str:
+        """Get line style indicator for legend display."""
+        if hasattr(trace, 'line') and trace.line and 'dash' in trace.line:
+            dash_style = trace.line.dash
+            if dash_style == 'dash':
+                return '- - -'
+            elif dash_style == 'dot':
+                return '· · ·'
+            elif dash_style == 'dashdot':
+                return '- · -'
+        
+        if hasattr(trace, 'fill') and trace.fill:
+            return '▬▬▬'  # Filled area indicator
+        
+        return '───'  # Solid line indicator
     
     def _expand_auto_plots(self, plots_config: List[Dict]) -> List[Dict]:
         """Expand auto-generated plots for multiple nodes."""
@@ -273,10 +319,7 @@ class ResultsVisualizer:
         y1_config = config.get('y1_axis', {})
         y2_config = config.get('y2_axis', {})
         
-        # Calculate legend position for this subplot
         legend_group = f"plot_{row}"
-        n_plots = len(fig._get_subplot_rows_columns()[0])  # Get total number of rows
-        legend_y = 1 - (row - 0.5) / n_plots  # Center legend vertically for this subplot
         
         # Y1 variables (precipitation)
         for var in y1_config.get('variables', []):

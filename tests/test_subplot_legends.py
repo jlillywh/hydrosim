@@ -101,7 +101,7 @@ class TestSubplotLegends:
         visualizer = ResultsVisualizer(sample_results, sample_network, viz_config)
         fig = visualizer.generate_all_plots()
         
-        # Global showlegend should be False
+        # Global showlegend should be False (we use custom annotations)
         assert fig.layout.showlegend == False
     
     def test_traces_have_legend_groups(self, sample_network, sample_results):
@@ -138,12 +138,19 @@ class TestSubplotLegends:
         visualizer = ResultsVisualizer(sample_results, sample_network, viz_config)
         fig = visualizer.generate_all_plots()
         
-        # Should have annotations for legends
+        # Should have annotations for legends (including subplot titles)
         assert len(fig.layout.annotations) > 0
         
-        # Check that annotations are positioned to the right (x > 1.0)
+        # Check that custom legend annotations are positioned to the right (x > 1.0)
         legend_annotations = [ann for ann in fig.layout.annotations if ann.x > 1.0]
         assert len(legend_annotations) > 0
+        
+        # Check that legend annotations have proper styling
+        for ann in legend_annotations:
+            assert ann.xref == "paper"
+            assert ann.yref == "paper"
+            assert ann.xanchor == "left"
+            assert ann.bgcolor == "rgba(255,255,255,0.9)"
     
     def test_multiple_subplots_have_separate_legends(self, sample_network, sample_results):
         """Test that multiple subplots get separate legend positioning."""

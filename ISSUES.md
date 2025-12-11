@@ -15,7 +15,7 @@
   - **GitHub**: https://github.com/jlillywh/hydrosim/issues/2
   - **Assignee**: Kiro AI
   - **Branch**: feature/issue-2-show-plot-specific-legend-to-the-right-of-each-chart
-  - **Notes**: ✅ FIXED - Implemented individual legends positioned to the right of each subplot. Replaced single global legend with custom legend annotations for each plot. Users can now see plot-specific legends without scrolling.
+  - **Notes**: ✅ FIXED - Implemented custom legend annotations positioned to the right of each subplot. Replaced problematic native Plotly legend with HTML-styled annotations that show proper colors and line styles. Each subplot now has its own legend with clear visual indicators and proper positioning that won't be cut off.
 
 - [ ] **Issue #5**: specify the start and end date of the simulation period in the model yaml file
   - **Status**: Open
