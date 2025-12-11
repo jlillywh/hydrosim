@@ -512,9 +512,13 @@ class YAMLParser:
         author = self.config.get('author')
         viz_config = self.config.get('visualization')
         
+        # Parse simulation configuration
+        sim_config = self._parse_simulation_config()
+        
         # Create network graph
         network = NetworkGraph(model_name=model_name, author=author)
         network.viz_config = viz_config
+        network.sim_config = sim_config
         
         # Parse and add nodes
         nodes_config = self.config.get('nodes', {})
@@ -1047,3 +1051,63 @@ class YAMLParser:
         
         else:
             raise ValueError(f"Unknown hydraulic type for link {link_id}: {hydraulic_type}")
+    
+    def _parse_simulation_config(self) -> Dict[str, Any]:
+        """
+        Parse simulation configuration section.
+        
+        Returns:
+            Dictionary with simulation parameters (start_date, num_timesteps, end_date)
+        """
+        sim_config = self.config.get('simulation', {})
+        
+        # Default values
+        result = {
+            'start_date': '2024-01-01',
+            'num_timesteps': 30
+        }
+        
+        # Parse start_date
+        if 'start_date' in sim_config:
+            start_date_str = sim_config['start_date']
+            try:
+                # Validate date format
+                datetime.strptime(start_date_str, '%Y-%m-%d')
+                result['start_date'] = start_date_str
+            except ValueError:
+                raise ValueError(f"Invalid start_date format: {start_date_str}. Expected YYYY-MM-DD")
+        
+        # Parse duration - either num_timesteps or end_date
+        if 'num_timesteps' in sim_config and 'end_date' in sim_config:
+            raise ValueError("Cannot specify both 'num_timesteps' and 'end_date' in simulation config")
+        
+        if 'num_timesteps' in sim_config:
+            try:
+                num_timesteps = int(sim_config['num_timesteps'])
+                if num_timesteps <= 0:
+                    raise ValueError("num_timesteps must be positive")
+                result['num_timesteps'] = num_timesteps
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid num_timesteps: {sim_config['num_timesteps']}. Must be a positive integer")
+        
+        elif 'end_date' in sim_config:
+            end_date_str = sim_config['end_date']
+            try:
+                # Validate date format
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+                start_date = datetime.strptime(result['start_date'], '%Y-%m-%d')
+                
+                # Calculate number of days
+                num_days = (end_date - start_date).days
+                if num_days <= 0:
+                    raise ValueError("end_date must be after start_date")
+                
+                result['end_date'] = end_date_str
+                result['num_timesteps'] = num_days
+            except ValueError as e:
+                if "time data" in str(e):
+                    raise ValueError(f"Invalid end_date format: {end_date_str}. Expected YYYY-MM-DD")
+                else:
+                    raise e
+        
+        return result

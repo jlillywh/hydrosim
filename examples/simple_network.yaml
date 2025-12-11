@@ -13,6 +13,11 @@
 model_name: "Simple Water Network Example"
 author: "HydroSim Team"
 
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"  # Simulation start date (YYYY-MM-DD)
+  num_timesteps: 365        # Number of days to simulate (full year)
+
 visualization:
   # Network map configuration
   network_map:
@@ -67,8 +72,9 @@ visualization:
     output_file: "simple_network_results.html"
 
 climate:
-  source_type: timeseries
-  filepath: climate_data.csv  # Path to climate CSV file
+  source_type: wgen
+  start_date: "2024-01-01"
+  wgen_params_file: wgen_params_template.csv
   site:
     latitude: 45.0    # degrees
     elevation: 1000.0 # meters
@@ -78,7 +84,7 @@ nodes:
   catchment:
     type: source
     strategy: timeseries
-    filepath: inflow_data.csv
+    filepath: inflow_data_365.csv
     column: inflow
   
   # Storage reservoir

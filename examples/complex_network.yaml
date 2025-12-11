@@ -14,11 +14,18 @@
 model_name: "Complex Multi-Reservoir System"
 author: "HydroSim Team"
 
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"  # Simulation start date (YYYY-MM-DD)
+  num_timesteps: 365         # Number of days to simulate
+  # Alternative: use end_date instead of num_timesteps
+  # end_date: "2024-01-30"  # Simulation end date (YYYY-MM-DD)
+
 visualization:
   # Network map configuration
   network_map:
-    width: 800
-    height: 1400
+    width: 1200
+    height: 2100
     layout: hierarchical
     output_file: "complex_network_topology.html"
   
@@ -31,7 +38,7 @@ visualization:
         label: "Precipitation (mm/day)"
         variables: [precip]
       y2_axis:
-        label: "Temperature (°C)"
+        label: "Temperature (degC)"
         variables: [tmax, tmin]
     
     # Source/catchment runoff
@@ -39,7 +46,7 @@ visualization:
       auto: true
       title_template: "{node_id} Runoff"
       y1_axis:
-        label: "Runoff (m³/day)"
+        label: "Runoff (m^3/day)"
         variables: [inflow]
     
     # Reservoir operations (auto-generates for both reservoirs)
@@ -47,10 +54,10 @@ visualization:
       auto: true
       title_template: "{node_id} Operations"
       y1_axis:
-        label: "Storage (m³)"
+        label: "Storage (m^3)"
         variables: [storage]
       y2_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [inflow, outflow, evap_loss, spill]
     
     # Demand supply vs request (auto-generates for city and farm)
@@ -58,7 +65,7 @@ visualization:
       auto: true
       title_template: "{node_id} Supply vs Demand"
       y1_axis:
-        label: "Flow (m³/day)"
+        label: "Flow (m^3/day)"
         variables: [request, delivered, deficit]
   
   # Layout settings
@@ -68,8 +75,9 @@ visualization:
     output_file: "complex_network_results.html"
 
 climate:
-  source_type: timeseries
-  filepath: climate_data.csv
+  source_type: wgen
+  start_date: "2024-01-01"
+  wgen_params_file: wgen_params_template.csv
   site:
     latitude: 45.0
     elevation: 1000.0
@@ -86,11 +94,11 @@ nodes:
       areas: [5000.0, 8000.0, 12000.0, 16000.0, 20000.0]
       volumes: [0.0, 50000.0, 150000.0, 300000.0, 500000.0]
   
-  # Catchment inflow (time series)
+  # Catchment inflow (365-day time series)
   catchment:
     type: source
     strategy: timeseries
-    filepath: inflow_data.csv
+    filepath: inflow_data_365.csv
     column: inflow
   
   # Junction for flow routing

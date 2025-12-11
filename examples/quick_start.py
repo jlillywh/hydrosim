@@ -58,8 +58,13 @@ def run_simple_example():
     
     # Step 5: Run simulation
     print("\n[Step 5] Running simulation...")
-    num_days = 30
-    print(f"   Simulating {num_days} days...")
+    
+    # Get simulation configuration from YAML
+    sim_config = getattr(network, 'sim_config', {'num_timesteps': 30})
+    num_days = sim_config.get('num_timesteps', 30)
+    start_date = sim_config.get('start_date', '2024-01-01')
+    
+    print(f"   Simulating {num_days} days from {start_date}...")
     
     for day in range(num_days):
         result = engine.step()
@@ -183,8 +188,13 @@ def run_complex_example():
     
     # Step 5: Run simulation
     print("\n[Step 5] Running simulation...")
-    num_days = 30
-    print(f"   Simulating {num_days} days...")
+    
+    # Get simulation configuration from YAML
+    sim_config = getattr(network, 'sim_config', {'num_timesteps': 30})
+    num_days = sim_config.get('num_timesteps', 30)
+    start_date = sim_config.get('start_date', '2024-01-01')
+    
+    print(f"   Simulating {num_days} days from {start_date}...")
     
     for day in range(num_days):
         result = engine.step()
