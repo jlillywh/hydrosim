@@ -141,8 +141,8 @@ class TestSubplotLegends:
         # Should have annotations for legends (including subplot titles)
         assert len(fig.layout.annotations) > 0
         
-        # Check that custom legend annotations are positioned to the right (x > 1.0)
-        legend_annotations = [ann for ann in fig.layout.annotations if ann.x > 1.0]
+        # Check that custom legend annotations are positioned in the legend area (x > 0.75)
+        legend_annotations = [ann for ann in fig.layout.annotations if ann.x > 0.75]
         assert len(legend_annotations) > 0
         
         # Check that legend annotations have proper styling
@@ -188,7 +188,7 @@ class TestSubplotLegends:
         fig = visualizer.generate_all_plots()
         
         # Get legend annotation y-positions
-        legend_annotations = [ann for ann in fig.layout.annotations if ann.x > 1.0]
+        legend_annotations = [ann for ann in fig.layout.annotations if ann.x > 0.75]
         y_positions = [ann.y for ann in legend_annotations]
         
         if len(y_positions) > 1:

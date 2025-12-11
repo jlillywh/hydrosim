@@ -153,10 +153,15 @@ class ResultsVisualizer:
         
         fig.update_layout(
             height=height,
-            width=width + 250,  # Add extra width for custom legends
+            width=width + 400,  # Add more width for custom legends
             showlegend=False,  # Disable global legend - we'll use custom annotations
             hovermode='x unified'
         )
+        
+        # Adjust plot area to leave room for legends
+        # Set the domain to use only 75% of the width, leaving 25% for legends
+        for i in range(1, n_plots + 1):
+            fig.update_xaxes(domain=[0.0, 0.75], row=i, col=1)
         
         # Add custom legends for each subplot
         self._add_custom_legends(fig, expanded_plots)
@@ -202,7 +207,7 @@ class ResultsVisualizer:
                 # Add legend annotation
                 legend_text = "<br>".join(legend_items)
                 fig.add_annotation(
-                    x=1.02,  # Position to the right of plots
+                    x=0.78,  # Position in the reserved legend space (after 75% plot area)
                     y=subplot_y_center,
                     xref="paper",
                     yref="paper",
@@ -213,7 +218,7 @@ class ResultsVisualizer:
                     bgcolor="rgba(255,255,255,0.9)",
                     bordercolor="rgba(0,0,0,0.2)",
                     borderwidth=1,
-                    font=dict(size=10),
+                    font=dict(size=9),  # Slightly smaller font to fit better
                     align="left"
                 )
     
