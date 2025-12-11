@@ -154,11 +154,56 @@ class ResultsVisualizer:
         fig.update_layout(
             height=height,
             width=width,
-            showlegend=True,
+            showlegend=False,  # Disable global legend - we'll create custom ones
             hovermode='x unified'
         )
         
+        # Add custom legends for each subplot
+        self._add_custom_subplot_legends(fig, expanded_plots)
+        
         return fig
+    
+    def _add_custom_subplot_legends(self, fig: go.Figure, plots_config: List[Dict]) -> None:
+        """Add custom legend annotations for each subplot."""
+        n_plots = len(plots_config)
+        
+        # Collect traces by subplot (legendgroup)
+        traces_by_subplot = {}
+        for trace in fig.data:
+            if hasattr(trace, 'legendgroup') and trace.legendgroup:
+                subplot_num = int(trace.legendgroup.split('_')[1])
+                if subplot_num not in traces_by_subplot:
+                    traces_by_subplot[subplot_num] = []
+                traces_by_subplot[subplot_num].append(trace)
+        
+        # Create legend annotations for each subplot
+        for subplot_num, traces in traces_by_subplot.items():
+            # Calculate vertical position for this subplot's legend
+            legend_y_center = 1 - (subplot_num - 0.5) / n_plots
+            
+            # Create legend text
+            legend_items = []
+            for trace in traces:
+                color = trace.line.color if hasattr(trace.line, 'color') else '#1f77b4'
+                legend_items.append(f'<span style="color:{color}">■</span> {trace.name}')
+            
+            legend_text = '<br>'.join(legend_items)
+            
+            # Add legend annotation
+            fig.add_annotation(
+                x=1.02,
+                y=legend_y_center,
+                xref="paper",
+                yref="paper",
+                text=legend_text,
+                showarrow=False,
+                xanchor="left",
+                yanchor="middle",
+                bgcolor="rgba(255,255,255,0.8)",
+                bordercolor="rgba(0,0,0,0.2)",
+                borderwidth=1,
+                font=dict(size=10)
+            )
     
     def _expand_auto_plots(self, plots_config: List[Dict]) -> List[Dict]:
         """Expand auto-generated plots for multiple nodes."""
@@ -228,6 +273,11 @@ class ResultsVisualizer:
         y1_config = config.get('y1_axis', {})
         y2_config = config.get('y2_axis', {})
         
+        # Calculate legend position for this subplot
+        legend_group = f"plot_{row}"
+        n_plots = len(fig._get_subplot_rows_columns()[0])  # Get total number of rows
+        legend_y = 1 - (row - 0.5) / n_plots  # Center legend vertically for this subplot
+        
         # Y1 variables (precipitation)
         for var in y1_config.get('variables', []):
             if var in self.df_climate.columns:
@@ -236,7 +286,9 @@ class ResultsVisualizer:
                         x=self.df_climate['date'],
                         y=self.df_climate[var],
                         name=var.capitalize(),
-                        mode='lines'
+                        mode='lines',
+                        legendgroup=legend_group,
+                        showlegend=False
                     ),
                     row=row, col=1, secondary_y=False
                 )
@@ -249,6 +301,8 @@ class ResultsVisualizer:
                         x=self.df_climate['date'],
                         y=self.df_climate[var],
                         name=var.upper(),
+                        legendgroup=legend_group,
+                        showlegend=False,
                         mode='lines',
                         line=dict(dash='dash')
                     ),
@@ -267,6 +321,7 @@ class ResultsVisualizer:
         
         df_node = self.df_sources[self.df_sources['node_id'] == node_id]
         y1_config = config.get('y1_axis', {})
+        legend_group = f"plot_{row}"
         
         for var in y1_config.get('variables', []):
             if var in df_node.columns:
@@ -275,7 +330,9 @@ class ResultsVisualizer:
                         x=df_node['date'],
                         y=df_node[var],
                         name=f"{node_id} {var}",
-                        mode='lines'
+                        mode='lines',
+                        legendgroup=legend_group,
+                        showlegend=False
                     ),
                     row=row, col=1, secondary_y=False
                 )
@@ -291,6 +348,7 @@ class ResultsVisualizer:
         df_node = self.df_storage[self.df_storage['node_id'] == node_id]
         y1_config = config.get('y1_axis', {})
         y2_config = config.get('y2_axis', {})
+        legend_group = f"plot_{row}"
         
         # Y1: Storage
         for var in y1_config.get('variables', []):
@@ -301,7 +359,9 @@ class ResultsVisualizer:
                         y=df_node[var],
                         name=f"{node_id} {var}",
                         mode='lines',
-                        fill='tozeroy'
+                        fill='tozeroy',
+                        legendgroup=legend_group,
+                        showlegend=False
                     ),
                     row=row, col=1, secondary_y=False
                 )
@@ -318,7 +378,9 @@ class ResultsVisualizer:
                     x=inflows['date'],
                     y=inflows['flow'],
                     name=f"{node_id} inflow",
-                    mode='lines'
+                    mode='lines',
+                    legendgroup=legend_group,
+                    showlegend=False
                 ),
                 row=row, col=1, secondary_y=True
             )
@@ -329,7 +391,9 @@ class ResultsVisualizer:
                     x=outflows['date'],
                     y=outflows['flow'],
                     name=f"{node_id} outflow",
-                    mode='lines'
+                    mode='lines',
+                    legendgroup=legend_group,
+                    showlegend=False
                 ),
                 row=row, col=1, secondary_y=True
             )
@@ -342,7 +406,9 @@ class ResultsVisualizer:
                     y=df_node['evap_loss'],
                     name=f"{node_id} evap_loss",
                     mode='lines',
-                    line=dict(dash='dot')
+                    line=dict(dash='dot'),
+                    legendgroup=legend_group,
+                    showlegend=False
                 ),
                 row=row, col=1, secondary_y=True
             )
@@ -355,7 +421,9 @@ class ResultsVisualizer:
                     y=spills['flow'],
                     name=f"{node_id} spill",
                     mode='lines',
-                    line=dict(dash='dash')
+                    line=dict(dash='dash'),
+                    legendgroup=legend_group,
+                    showlegend=False
                 ),
                 row=row, col=1, secondary_y=True
             )
@@ -371,6 +439,7 @@ class ResultsVisualizer:
         
         df_node = self.df_demands[self.df_demands['node_id'] == node_id]
         y1_config = config.get('y1_axis', {})
+        legend_group = f"plot_{row}"
         
         for var in y1_config.get('variables', []):
             if var in df_node.columns:
@@ -379,7 +448,9 @@ class ResultsVisualizer:
                         x=df_node['date'],
                         y=df_node[var],
                         name=f"{node_id} {var}",
-                        mode='lines'
+                        mode='lines',
+                        legendgroup=legend_group,
+                        showlegend=False
                     ),
                     row=row, col=1, secondary_y=False
                 )
