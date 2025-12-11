@@ -157,8 +157,10 @@ def visualize_network(
         hovermode='closest',
         width=width,
         height=height,
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, 
+                   range=[-0.5, 0.5], scaleanchor="y", scaleratio=1),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False,
+                   range=[-0.3, 0.3]),
         plot_bgcolor='white',
         margin=dict(l=20, r=20, t=80, b=20),
         annotations=annotations

@@ -24,8 +24,8 @@ simulation:
 visualization:
   # Network map configuration
   network_map:
-    width: 800
-    height: 1400
+    width: 1200
+    height: 2100
     layout: hierarchical
     output_file: "complex_network_topology.html"
   
