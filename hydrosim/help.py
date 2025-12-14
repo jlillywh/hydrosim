@@ -359,15 +359,31 @@ engine = hs.SimulationEngine(network)
 results = engine.run(start_date='2020-01-01', end_date='2020-12-31')""",
         
         """# Create nodes programmatically
-storage = hs.StorageNode('reservoir', capacity=1000)
-demand = hs.DemandNode('city', demand_strategy=hs.MunicipalDemand())
-link = hs.Link('pipe', from_node=storage, to_node=demand)"""
+# Create elevation-area-volume table
+eav = hs.ElevationAreaVolume(
+    elevations=[100, 110, 120],
+    areas=[1000, 2000, 3000], 
+    volumes=[0, 10000, 30000]
+)
+
+# Create storage node
+storage = hs.StorageNode('reservoir', 
+                        initial_storage=15000,
+                        eav_table=eav,
+                        max_storage=30000)
+
+# Create demand node  
+demand = hs.DemandNode('city', hs.MunicipalDemand(population=5000, per_capita_demand=0.2))
+
+# Create link
+link = hs.Link('pipe', storage, demand, physical_capacity=500, cost=1.0)"""
     ]
     
     # Useful links
     links = [
         "Documentation: https://github.com/jlillywh/hydrosim#readme",
-        "Examples: https://github.com/jlillywh/hydrosim/tree/main/examples",
+        "Examples Package: https://github.com/jlillywh/hydrosim/releases (download hydrosim-examples-v0.4.3.zip)",
+        "Examples Browser: https://github.com/jlillywh/hydrosim/tree/main/examples",
         "Issues: https://github.com/jlillywh/hydrosim/issues"
     ]
     
@@ -762,6 +778,91 @@ print(f"Links: {len(network.links)}")"""
         )
         
         display_manager.display_content(examples_content)
+
+
+def download_examples() -> None:
+    """
+    Provide information about downloading HydroSim examples.
+    
+    Shows users how to get the complete examples package from GitHub releases
+    without needing to clone the repository.
+    """
+    env = EnvironmentDetector.detect()
+    
+    content = """📦 HydroSim Examples Package
+
+Get the complete examples package with all configurations, sample data, and tutorials:
+
+🌐 DOWNLOAD LOCATION:
+   https://github.com/jlillywh/hydrosim/releases
+
+📁 PACKAGE NAME:
+   hydrosim-examples-v0.4.3.zip
+
+🚀 QUICK START:
+   1. Download and extract the zip file
+   2. cd hydrosim-examples-v0.4.3
+   3. python hydrosim_starter_notebook.py
+
+📚 PACKAGE CONTENTS:
+   • hydrosim_starter_notebook.py - Self-contained starter (no external files)
+   • quick_start.py - YAML-based workflow example
+   • notebook_quick_start.py - Jupyter-optimized tutorial
+   • Network examples with visualizations
+   • Climate data and weather generation examples
+   • Sample YAML configurations and data files
+
+💡 ALTERNATIVE - BUILT-IN EXAMPLES:
+   import hydrosim as hs
+   hs.examples()     # Browse examples with code snippets
+   hs.quick_start()  # Interactive tutorial
+
+The examples package is only 50KB and contains everything you need to get started!"""
+
+    if env.supports_html:
+        # Rich HTML display for Jupyter
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 800px;">
+            <h2 style="color: #2E86AB;">📦 HydroSim Examples Package</h2>
+            <p>Get the complete examples package with all configurations, sample data, and tutorials:</p>
+            
+            <h3 style="color: #A23B72;">🌐 Download Location:</h3>
+            <p><a href="https://github.com/jlillywh/hydrosim/releases" target="_blank" 
+               style="color: #F18F01; text-decoration: none; font-weight: bold;">
+               https://github.com/jlillywh/hydrosim/releases</a></p>
+            
+            <h3 style="color: #A23B72;">📁 Package Name:</h3>
+            <p><code style="background: #f0f0f0; padding: 2px 4px;">hydrosim-examples-v0.4.2.zip</code></p>
+            
+            <h3 style="color: #A23B72;">🚀 Quick Start:</h3>
+            <ol>
+                <li>Download and extract the zip file</li>
+                <li><code>cd hydrosim-examples-v0.4.2</code></li>
+                <li><code>python hydrosim_starter_notebook.py</code></li>
+            </ol>
+            
+            <h3 style="color: #A23B72;">📚 Package Contents:</h3>
+            <ul>
+                <li><strong>hydrosim_starter_notebook.py</strong> - Self-contained starter (no external files)</li>
+                <li><strong>quick_start.py</strong> - YAML-based workflow example</li>
+                <li><strong>notebook_quick_start.py</strong> - Jupyter-optimized tutorial</li>
+                <li>Network examples with visualizations</li>
+                <li>Climate data and weather generation examples</li>
+                <li>Sample YAML configurations and data files</li>
+            </ul>
+            
+            <h3 style="color: #A23B72;">💡 Alternative - Built-in Examples:</h3>
+            <pre style="background: #f8f8f8; padding: 10px; border-left: 4px solid #2E86AB;">
+import hydrosim as hs
+hs.examples()     # Browse examples with code snippets
+hs.quick_start()  # Interactive tutorial</pre>
+            
+            <p style="color: #666; font-style: italic;">The examples package is only 50KB and contains everything you need to get started!</p>
+        </div>
+        """
+        display_content(content, html_content, env)
+    else:
+        print(content)
 
 
 def quick_start() -> None:

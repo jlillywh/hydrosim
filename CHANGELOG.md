@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2024-12-14
+
+### Added
+- **Examples Download System**: New functionality to easily get all examples without cloning repository
+  - `hydrosim.download_examples()`: Python function to show download instructions
+  - `hydrosim --download`: CLI command for examples package information
+  - Examples package creation script for GitHub releases
+  - Self-contained starter notebook that works without external files
+- **Enhanced Help System**: Updated help system with examples package information
+  - Links to GitHub releases for examples download
+  - Rich HTML display in Jupyter notebooks for download instructions
+- **Improved CLI**: Added `--download` command to CLI interface
+- **Complete Examples Package**: Created comprehensive examples package (50KB) containing:
+  - Self-contained starter notebook (no external files needed)
+  - All example scripts with YAML configurations
+  - Sample data files and documentation
+  - Comprehensive README with learning path
+
+### Fixed
+- **Starter Notebook Issues**: Fixed climate data column naming and indexing issues
+- **Network Visualization**: Added network diagram generation to starter examples
+- **File Dependencies**: Created truly self-contained examples that work out of the box
+
+### Impact
+- **Significantly Improved User Experience**: Users can now get started without cloning the repository
+- **Reduced Friction**: One-click download of complete examples package from GitHub releases
+- **Better Onboarding**: Self-contained examples work immediately after `pip install hydrosim`
+
+## [0.4.2] - 2024-12-14
+
+### Fixed
+- **Critical Bug**: Fixed incorrect `StorageNode` constructor examples in help system and docstrings
+  - Removed non-existent `capacity` parameter from all examples
+  - Updated examples to use correct constructor: `StorageNode(node_id, initial_storage, eav_table, max_storage)`
+  - Fixed examples in `hydrosim.help()`, `hydrosim/controls.py`, `hydrosim/links.py`, and `hydrosim/nodes.py`
+  - New users can now successfully follow the interactive help examples without errors
+
+### Impact
+- **High Priority**: This was breaking the first-user experience for anyone following the help system examples
+- **Immediate Fix**: All help system examples now work correctly out of the box
+
 ## [0.4.1] - 2024-12-13
 
 ### Added

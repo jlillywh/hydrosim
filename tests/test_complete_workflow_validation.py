@@ -342,7 +342,7 @@ class TestCompleteWorkflowValidation:
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             hydrosim.about()
             output = mock_stdout.getvalue()
-            assert 'v0.4.1' in output or 'version' in output.lower()
+            assert 'v0.4.3' in output or 'version' in output.lower()
             assert 'license' in output.lower()
         
         # Requirement 2.5: examples() function

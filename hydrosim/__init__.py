@@ -26,7 +26,7 @@ Main Components:
     - Configuration: YAMLParser, NetworkGraph
 """
 
-__version__ = "0.4.1"
+__version__ = "0.4.3"
 
 from hydrosim.climate import ClimateState, SiteConfig
 from hydrosim.config import ElevationAreaVolume, NetworkGraph, YAMLParser
@@ -59,7 +59,7 @@ from hydrosim.exceptions import (
     ClimateDataError,
     EAVInterpolationError,
 )
-from hydrosim.help import help, about, docs, examples, quick_start
+from hydrosim.help import help, about, docs, examples, quick_start, download_examples
 
 __all__ = [
     # Help and documentation functions
@@ -68,6 +68,11 @@ __all__ = [
     'docs',
     'examples',
     'quick_start',
+    'download_examples',
+
+    # Examples management
+    'get_examples',
+    'create_starter_project',
     # Core data structures
     'ClimateState',
     'SiteConfig',

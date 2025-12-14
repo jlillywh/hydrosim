@@ -9,8 +9,10 @@ Example:
     >>> import hydrosim as hs
     >>> 
     >>> # Create nodes
-    >>> reservoir = hs.StorageNode('reservoir', capacity=1000)
-    >>> city = hs.DemandNode('city', demand_strategy=hs.MunicipalDemand(50))
+    >>> eav = hs.ElevationAreaVolume([100, 110], [1000, 2000], [0, 10000])
+    >>> reservoir = hs.StorageNode('reservoir', initial_storage=5000, 
+    ...                           eav_table=eav, max_storage=10000)
+    >>> city = hs.DemandNode('city', hs.MunicipalDemand(population=1000, per_capita_demand=0.2))
     >>> 
     >>> # Create link with control
     >>> pipeline = hs.Link('pipeline', reservoir, city, 

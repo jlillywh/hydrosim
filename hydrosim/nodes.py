@@ -13,10 +13,12 @@ Example:
     >>> import hydrosim as hs
     >>> 
     >>> # Create a storage reservoir
+    >>> eav = hs.ElevationAreaVolume([100, 110], [1000, 2000], [0, 10000])
     >>> reservoir = hs.StorageNode(
     ...     node_id='reservoir',
-    ...     capacity=1000.0,
-    ...     initial_storage=500.0
+    ...     initial_storage=5000.0,
+    ...     eav_table=eav,
+    ...     max_storage=10000.0
     ... )
     >>> 
     >>> # Create a demand node

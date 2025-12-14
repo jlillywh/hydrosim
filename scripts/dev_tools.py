@@ -125,7 +125,7 @@ def finish_issue(issue_number):
     print(f"   Next steps:")
     print(f"   1. Create PR on GitHub: develop ← {current_branch}")
     print(f"   2. Add reviewers and description")
-    print(f"   3. After merge, run: python dev_tools.py cleanup")
+    print(f"   3. After merge, run: python scripts/dev_tools.py cleanup")
     
     return True
 

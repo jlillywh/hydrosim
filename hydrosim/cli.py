@@ -10,7 +10,7 @@ import argparse
 from typing import Optional, List
 
 # Import help system functions to reuse
-from hydrosim.help import help, about, docs, examples
+from hydrosim.help import help, about, docs, examples, download_examples
 
 
 def main() -> None:
@@ -29,6 +29,8 @@ def main() -> None:
             show_help()
         elif args.command == 'examples':
             list_examples()
+        elif args.command == 'download':
+            download_examples_cli()
         elif args.command == 'about':
             show_about()
         elif args.command == 'docs':
@@ -60,6 +62,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
 Examples:
   hydrosim --help      Show comprehensive help information
   hydrosim --examples  List available example scripts
+  hydrosim --download  Download complete examples package
   hydrosim --about     Display version and project information
   hydrosim --docs      Open documentation in browser
 
@@ -100,6 +103,14 @@ For more information, visit: https://github.com/jlillywh/hydrosim
         help='Open documentation in default browser'
     )
     
+    parser.add_argument(
+        '--download',
+        action='store_const',
+        const='download',
+        dest='command',
+        help='Download complete examples package from GitHub releases'
+    )
+    
     return parser
 
 
@@ -122,6 +133,7 @@ def show_help() -> None:
     print("-" * 30)
     print("  hydrosim --help      Show this help information")
     print("  hydrosim --examples  List available examples")
+    print("  hydrosim --download  Download complete examples package")
     print("  hydrosim --about     Show version and project info")
     print("  hydrosim --docs      Open documentation in browser")
     print()
@@ -180,6 +192,21 @@ def open_docs() -> None:
     
     # Call the docs function from help system
     docs()
+
+
+def download_examples_cli() -> None:
+    """
+    Show examples download information via CLI.
+    
+    Provides CLI interface for getting the complete examples package
+    without needing to clone the repository.
+    """
+    print("HydroSim Examples Downloader")
+    print("=" * 50)
+    print()
+    
+    # Call the download function from help system
+    download_examples()
 
 
 if __name__ == '__main__':
