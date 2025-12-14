@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2024-12-13
+
+### Added
+- **Interactive Help System**: Comprehensive help functions for improved developer experience
+  - `hydrosim.help()`: Environment-aware help with rich formatting for Jupyter notebooks
+  - `hydrosim.about()`: Version information and project details
+  - `hydrosim.docs()`: Documentation access with browser integration
+  - `hydrosim.examples()`: Interactive examples browser with code snippets
+  - `hydrosim.quick_start()`: Step-by-step tutorial optimized for Jupyter notebooks
+- **Enhanced CLI Interface**: Improved command-line interface with help system integration
+  - `hydrosim --help`: Display usage information and quick-start examples
+  - `hydrosim --examples`: List available example scripts with descriptions
+  - `hydrosim --about`: Show version and project information
+- **Jupyter Notebook Optimization**: Enhanced support for notebook environments
+  - Automatic environment detection (terminal vs Jupyter vs Colab)
+  - Rich HTML formatting for notebook display
+  - Interactive code snippets with copy-paste functionality
+  - Notebook-friendly example files with markdown documentation
+- **Enhanced Package Metadata**: Improved discoverability and documentation integration
+  - Complete project URLs in package metadata
+  - Enhanced docstrings for all public modules
+  - Console script entry point for CLI access
+  - Improved distribution file inclusion
+
+### Changed
+- **Examples Enhancement**: Updated existing examples with notebook-friendly formatting
+  - Added markdown-style documentation headers
+  - Improved progress output with emojis and clear formatting
+  - Better step-by-step structure for learning
+  - Enhanced explanations for both terminal and notebook users
+- **Public API**: Expanded public API with help system functions
+  - Added help functions to `__all__` declarations
+  - Updated main docstring with quick start examples
+  - Improved module-level documentation
+
+### Documentation
+- **Interactive Tutorial**: New `quick_start()` function provides comprehensive tutorial
+  - 7-step interactive guide from installation to visualization
+  - Executable code cells for hands-on learning
+  - Sample data generation and network configuration
+  - Results analysis and visualization examples
+- **Notebook Examples**: Created `notebook_quick_start.py` for optimal Jupyter experience
+  - Cell-by-cell structure with clear explanations
+  - Comprehensive workflow demonstration
+  - Visualization examples with matplotlib integration
+  - Clear next steps and learning path guidance
+
 ## [0.4.0] - 2024-12-10
 
 ### Added

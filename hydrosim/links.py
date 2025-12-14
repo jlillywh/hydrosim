@@ -2,7 +2,33 @@
 Link implementations for the HydroSim framework.
 
 Links represent connections between nodes that handle horizontal physics
-(transport constraints).
+(transport constraints). Links define flow capacity, cost, and optional
+control rules or hydraulic models.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Create nodes
+    >>> reservoir = hs.StorageNode('reservoir', capacity=1000)
+    >>> city = hs.DemandNode('city', demand_strategy=hs.MunicipalDemand(50))
+    >>> 
+    >>> # Create link with capacity and cost
+    >>> pipeline = hs.Link(
+    ...     link_id='pipeline',
+    ...     source=reservoir,
+    ...     target=city,
+    ...     physical_capacity=100.0,
+    ...     cost=0.01
+    ... )
+    >>> 
+    >>> # Add control rule (optional)
+    >>> pipeline.control = hs.FractionalControl(
+    ...     target_fraction=0.8,
+    ...     reference_node=reservoir
+    ... )
+
+Links participate in the network optimization process where flows are
+allocated to minimize cost while satisfying all constraints.
 """
 
 from typing import Optional, Tuple, TYPE_CHECKING

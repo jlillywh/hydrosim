@@ -2,7 +2,37 @@
 Node abstractions and implementations for the HydroSim framework.
 
 Nodes represent locations in the water network that handle vertical physics
-(interactions with environment).
+(interactions with environment). Each node type implements specific behaviors:
+
+- StorageNode: Reservoirs with capacity constraints and evaporation
+- DemandNode: Water demands with deficit tracking
+- SourceNode: Inflow generation points (rivers, groundwater)
+- JunctionNode: Flow routing points with no storage
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Create a storage reservoir
+    >>> reservoir = hs.StorageNode(
+    ...     node_id='reservoir',
+    ...     capacity=1000.0,
+    ...     initial_storage=500.0
+    ... )
+    >>> 
+    >>> # Create a demand node
+    >>> city = hs.DemandNode(
+    ...     node_id='city',
+    ...     demand_strategy=hs.MunicipalDemand(base_demand=50.0)
+    ... )
+    >>> 
+    >>> # Create an inflow source
+    >>> river = hs.SourceNode(
+    ...     node_id='river',
+    ...     generator_strategy=hs.TimeSeriesStrategy(data, 'inflow')
+    ... )
+
+All nodes participate in the simulation timestep cycle and can be connected
+via Link objects to form complex water networks.
 """
 
 from abc import ABC, abstractmethod

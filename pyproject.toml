@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydrosim"
-version = "0.3.1"
+version = "0.4.1"
 authors = [
     {name = "J. Lillywh"},
 ]
@@ -45,11 +45,15 @@ dev = [
     "pytest-cov>=4.1.0",
 ]
 
+[project.scripts]
+hydrosim = "hydrosim.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/jlillywh/hydrosim"
 Repository = "https://github.com/jlillywh/hydrosim"
 "Bug Reports" = "https://github.com/jlillywh/hydrosim/issues"
 Documentation = "https://github.com/jlillywh/hydrosim#readme"
+Changelog = "https://github.com/jlillywh/hydrosim/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "examples*", "example_project*", "output*"]

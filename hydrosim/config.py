@@ -1,7 +1,45 @@
 """
 Configuration parsing and network construction.
 
-This module handles YAML configuration parsing and network graph construction.
+This module handles YAML configuration parsing and network graph construction,
+providing a declarative way to define complex water networks. It supports
+all node types, link configurations, climate sources, and control strategies.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Load network from YAML configuration
+    >>> network = hs.YAMLParser.load_network('my_network.yaml')
+    >>> 
+    >>> # Inspect loaded network
+    >>> print(f"Nodes: {len(network.nodes)}")
+    >>> print(f"Links: {len(network.links)}")
+    >>> 
+    >>> # Access specific nodes
+    >>> reservoir = network.get_node('reservoir')
+    >>> print(f"Capacity: {reservoir.capacity}")
+
+YAML Configuration Structure:
+    nodes:
+      - id: reservoir
+        type: storage
+        capacity: 1000
+        initial_storage: 500
+      - id: city
+        type: demand
+        demand_strategy:
+          type: municipal
+          base_demand: 50
+    
+    links:
+      - id: pipeline
+        source: reservoir
+        target: city
+        capacity: 100
+        cost: 0.01
+
+The YAMLParser automatically creates appropriate node and link objects
+with all specified parameters and strategies.
 """
 
 from typing import Dict, List, Any, Optional

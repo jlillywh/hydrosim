@@ -2,10 +2,48 @@
 Strategy pattern implementations for generation and demand calculation.
 
 Strategies allow pluggable algorithms for inflow generation and demand modeling.
+This enables flexible modeling of different hydrologic processes, demand
+patterns, and water use behaviors within the same network framework.
+
+Example:
+    >>> import hydrosim as hs
+    >>> import pandas as pd
+    >>> 
+    >>> # Time series inflow strategy
+    >>> inflow_data = pd.read_csv('inflows.csv', parse_dates=['date'])
+    >>> inflow_strategy = hs.TimeSeriesStrategy(inflow_data, 'flow_cms')
+    >>> 
+    >>> # Municipal demand strategy
+    >>> municipal_demand = hs.MunicipalDemand(
+    ...     base_demand=50.0,           # ML/day
+    ...     seasonal_factor=1.2,        # summer peak
+    ...     growth_rate=0.02            # 2% annual growth
+    ... )
+    >>> 
+    >>> # Agricultural demand strategy
+    >>> ag_demand = hs.AgricultureDemand(
+    ...     crop_coefficient=1.1,       # crop factor
+    ...     irrigated_area=1000.0,      # hectares
+    ...     efficiency=0.8              # irrigation efficiency
+    ... )
+    >>> 
+    >>> # Hydrology strategy (rainfall-runoff)
+    >>> hydrology = hs.AWBMModel(
+    ...     catchment_area=500.0,       # km²
+    ...     c1=0.134, c2=0.433, c3=0.433,  # capacity parameters
+    ...     a1=0.300, a2=0.700, a3=0.500   # area parameters
+    ... )
+
+Available Strategies:
+    Generation: TimeSeriesStrategy, HydrologyStrategy, AWBMModel, Snow17Model
+    Demand: MunicipalDemand, AgricultureDemand, TimeSeriesStrategy
+    
+Strategies are assigned to nodes during network configuration and execute
+during each simulation timestep to calculate inflows and demands.
 """
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, List
 import pandas as pd
 
 if TYPE_CHECKING:

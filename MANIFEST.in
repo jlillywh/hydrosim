@@ -20,8 +20,11 @@ recursive-exclude * .DS_Store
 recursive-exclude .git *
 recursive-exclude .pytest_cache *
 recursive-exclude .venv *
+recursive-exclude venv *
 recursive-exclude .vscode *
 recursive-exclude output *
 recursive-exclude example_project *
 recursive-exclude tests *
 recursive-exclude *.egg-info *
+recursive-exclude dist *
+recursive-exclude build *

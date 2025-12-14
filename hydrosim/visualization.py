@@ -1,7 +1,42 @@
 """
 Network visualization using Plotly.
 
-This module provides interactive visualization of water network topology.
+This module provides interactive visualization of water network topology
+using Plotly for web-based interactive plots. It creates network diagrams
+showing nodes, links, and flow directions with customizable layouts.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Load network
+    >>> network = hs.YAMLParser.load_network('network.yaml')
+    >>> 
+    >>> # Create interactive visualization
+    >>> hs.visualize_network(
+    ...     network, 
+    ...     output_file='network_map.html',
+    ...     layout='hierarchical',
+    ...     show_flows=True
+    ... )
+    >>> 
+    >>> # Save static image
+    >>> hs.save_network_visualization(
+    ...     network,
+    ...     filename='network_diagram.png',
+    ...     format='png',
+    ...     width=800,
+    ...     height=600
+    ... )
+
+Features:
+    - Interactive HTML plots with zoom, pan, and hover information
+    - Multiple layout algorithms (circular, hierarchical)
+    - Color-coded nodes by type (storage=blue, demand=red, etc.)
+    - Flow direction indicators on links
+    - Customizable styling and export options
+
+The visualization opens automatically in your default browser and can be
+embedded in reports or shared as standalone HTML files.
 """
 
 from typing import Optional, Dict, Tuple

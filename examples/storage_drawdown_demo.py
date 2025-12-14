@@ -1,14 +1,34 @@
 """
-Storage Drawdown Demonstration
+# Storage Drawdown Demonstration
 
 This example demonstrates HydroSim's active storage drawdown feature
-by creating scenarios that show:
-1. Drawdown when demand exceeds inflow
-2. Refill when inflow exceeds demand
-3. Dead pool protection
-4. Capacity constraints and spilling
+through three key scenarios.
 
-The virtual link architecture automatically handles these operations.
+## Scenarios Demonstrated
+1. **Drawdown**: Storage releases water when demand exceeds inflow
+2. **Refill**: Storage fills when inflow exceeds demand  
+3. **Dead Pool Protection**: Minimum storage level is maintained
+
+## Key Features
+- Virtual link architecture automatically handles storage operations
+- Cost-based prioritization (demands > storage > spilling)
+- Realistic reservoir constraints and behaviors
+- Clear before/after comparisons for each scenario
+
+## Notebook Usage
+Each scenario runs independently with clear output showing:
+- Initial conditions
+- Daily simulation progress
+- Final results and validation
+- Expected vs actual outcomes
+
+## Technical Details
+The solver creates virtual components automatically:
+- Carryover links (cost = -1) for storage decisions
+- Virtual sinks for future storage state
+- Spillway links (cost = 0) for excess water
+
+No additional configuration needed - it just works!
 """
 
 from datetime import datetime

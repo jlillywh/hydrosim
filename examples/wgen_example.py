@@ -1,27 +1,32 @@
 """
-WGEN Stochastic Weather Generation Example
+# WGEN Stochastic Weather Generation Example
 
 This example demonstrates HydroSim's WGEN (Weather GENerator) integration
-for stochastic climate data generation. WGEN produces synthetic daily weather
-including precipitation, temperature, and solar radiation.
+for stochastic climate data generation.
 
-Key Features Demonstrated:
-1. CSV-based parameter configuration (recommended for 62 parameters)
-2. Inline YAML parameter configuration (alternative approach)
-3. Stochastic weather generation with monthly parameter variation
-4. Climate-driven water network simulation
-5. Comparison of results between configuration methods
-
-WGEN generates:
+## Overview
+WGEN produces synthetic daily weather including:
 - Precipitation (mm/day)
-- Maximum temperature (°C)
+- Maximum temperature (°C)  
 - Minimum temperature (°C)
 - Solar radiation (MJ/m²/day)
 
+## Key Features Demonstrated
+1. **CSV-based parameter configuration** (recommended for 62 parameters)
+2. **Inline YAML parameter configuration** (alternative approach)
+3. **Stochastic weather generation** with monthly parameter variation
+4. **Climate-driven water network simulation**
+5. **Comparison of results** between configuration methods
+
+## Climate Impact on Water Systems
 These climate variables drive:
-- Reservoir evaporation
+- Reservoir evaporation losses
 - Agricultural water demand (crop ET)
 - Catchment runoff (in real applications)
+
+## Notebook Usage
+This example works well in Jupyter notebooks with clear progress output
+and summary statistics for each approach.
 """
 
 from datetime import datetime

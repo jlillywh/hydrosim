@@ -17,7 +17,7 @@ def test_imports():
     from hydrosim import controls
     from hydrosim import hydraulics
     
-    assert hydrosim.__version__ == "0.3.1"
+    assert hydrosim.__version__ == "0.4.1"
 
 
 def test_abstract_classes_exist():

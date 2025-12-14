@@ -2,10 +2,31 @@
 HydroSim: A Python-based water resources planning framework.
 
 This package provides tools for daily timestep simulation of complex,
-interconnected water systems.
+interconnected water systems including:
+
+• Network-based modeling with nodes (storage, demand, source, junction) and links
+• Climate data integration with time series and weather generator support  
+• Optimization-based water allocation using linear programming
+• Comprehensive results analysis and visualization tools
+• YAML-based configuration for easy model setup
+
+Quick Start:
+    >>> import hydrosim as hs
+    >>> hs.help()  # Display comprehensive help
+    >>> hs.quick_start()  # Interactive tutorial for beginners
+    >>> hs.examples()  # Show working code examples
+    >>> hs.docs()  # Open documentation
+
+Main Components:
+    - Nodes & Links: StorageNode, DemandNode, SourceNode, JunctionNode, Link
+    - Climate: ClimateEngine, WGENClimateSource, TimeSeriesClimateSource  
+    - Strategies: HydrologyStrategy, DemandModel, GeneratorStrategy
+    - Simulation: SimulationEngine, NetworkSolver
+    - Results: ResultsWriter, ResultsVisualizer
+    - Configuration: YAMLParser, NetworkGraph
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from hydrosim.climate import ClimateState, SiteConfig
 from hydrosim.config import ElevationAreaVolume, NetworkGraph, YAMLParser
@@ -38,19 +59,29 @@ from hydrosim.exceptions import (
     ClimateDataError,
     EAVInterpolationError,
 )
+from hydrosim.help import help, about, docs, examples, quick_start
 
 __all__ = [
+    # Help and documentation functions
+    'help',
+    'about', 
+    'docs',
+    'examples',
+    'quick_start',
+    # Core data structures
     'ClimateState',
     'SiteConfig',
     'ElevationAreaVolume',
     'NetworkGraph',
     'YAMLParser',
+    # Network components
     'Node',
     'StorageNode',
     'JunctionNode',
     'SourceNode',
     'DemandNode',
     'Link',
+    # Climate system
     'ClimateEngine',
     'ClimateSource',
     'TimeSeriesClimateSource',
@@ -59,6 +90,7 @@ __all__ = [
     'WGENState',
     'WGENOutputs',
     'wgen_step',
+    # Strategies and models
     'GeneratorStrategy',
     'DemandModel',
     'TimeSeriesStrategy',
@@ -67,6 +99,7 @@ __all__ = [
     'AWBMModel',
     'MunicipalDemand',
     'AgricultureDemand',
+    # Controls and hydraulics
     'Control',
     'FractionalControl',
     'AbsoluteControl',
@@ -74,19 +107,23 @@ __all__ = [
     'HydraulicModel',
     'WeirModel',
     'PipeModel',
+    # Simulation and solving
     'NetworkSolver',
     'LinearProgrammingSolver',
     'SimulationEngine',
+    # Results and visualization
     'ResultsWriter',
     'visualize_network',
     'save_network_visualization',
     'ResultsVisualizer',
     'visualize_results',
+    # Exceptions
     'HydroSimError',
     'NegativeStorageError',
     'InfeasibleNetworkError',
     'ClimateDataError',
     'EAVInterpolationError',
+    # Cost constants
     'COST_DEMAND',
     'COST_STORAGE',
     'COST_SPILL',

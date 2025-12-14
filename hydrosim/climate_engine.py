@@ -2,7 +2,36 @@
 Climate engine for managing temporal and climatic context.
 
 The climate engine manages timestep progression and calculates derived
-climate variables like reference evapotranspiration (ET0).
+climate variables like reference evapotranspiration (ET0) using the
+Penman-Monteith equation. It coordinates with climate data sources to
+provide environmental drivers for the simulation.
+
+Example:
+    >>> import hydrosim as hs
+    >>> from datetime import datetime
+    >>> 
+    >>> # Set up climate data source
+    >>> climate_source = hs.TimeSeriesClimateSource('weather_data.csv')
+    >>> 
+    >>> # Configure site parameters for ET0 calculation
+    >>> site_config = hs.SiteConfig(
+    ...     latitude=40.0,      # degrees north
+    ...     elevation=1000.0    # meters above sea level
+    ... )
+    >>> 
+    >>> # Create climate engine
+    >>> climate_engine = hs.ClimateEngine(
+    ...     source=climate_source,
+    ...     site_config=site_config,
+    ...     start_date=datetime(2020, 1, 1)
+    ... )
+    >>> 
+    >>> # Step through time
+    >>> climate_state = climate_engine.step()
+    >>> print(f"ET0: {climate_state.et0:.2f} mm/day")
+
+The climate engine supports both time series data and stochastic weather
+generation via WGEN for long-term planning studies.
 """
 
 from datetime import datetime, timedelta

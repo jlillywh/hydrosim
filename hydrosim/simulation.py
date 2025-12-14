@@ -2,7 +2,40 @@
 Simulation engine for orchestrating timestep execution.
 
 The simulation engine coordinates the execution of all components in the
-correct order to ensure proper physics and optimization.
+correct order to ensure proper physics and optimization. It manages the
+daily timestep cycle and integrates climate, hydrology, demands, and
+network optimization.
+
+Example:
+    >>> import hydrosim as hs
+    >>> from datetime import datetime
+    >>> 
+    >>> # Load network configuration
+    >>> network = hs.YAMLParser.load_network('network.yaml')
+    >>> 
+    >>> # Set up climate engine
+    >>> climate_source = hs.TimeSeriesClimateSource('climate.csv')
+    >>> site_config = hs.SiteConfig(latitude=40.0, elevation=1000.0)
+    >>> climate_engine = hs.ClimateEngine(climate_source, site_config, 
+    ...                                   datetime(2020, 1, 1))
+    >>> 
+    >>> # Create and run simulation
+    >>> engine = hs.SimulationEngine(network, climate_engine)
+    >>> results = engine.run(
+    ...     start_date=datetime(2020, 1, 1),
+    ...     end_date=datetime(2020, 12, 31)
+    ... )
+    >>> 
+    >>> # Export results
+    >>> writer = hs.ResultsWriter(results)
+    >>> writer.write_all_csv('output/')
+
+The simulation enforces a strict execution order each timestep:
+1. Environment step: Update climate and calculate ET0
+2. Node step: Execute generation, demand, and evaporation
+3. Link step: Update flow constraints
+4. Solver step: Optimize network flows
+5. State update: Move water and update storage
 """
 
 from typing import Dict, List, Optional

@@ -2,7 +2,49 @@
 Climate data sources for the HydroSim framework.
 
 This module provides different sources of climate data including time series
-from CSV files and stochastic generation using WGEN.
+from CSV files and stochastic generation using WGEN. Climate sources provide
+the environmental drivers (precipitation, temperature, solar radiation) needed
+for ET0 calculation and hydrologic modeling.
+
+Example:
+    >>> import hydrosim as hs
+    >>> import pandas as pd
+    >>> from datetime import datetime
+    >>> 
+    >>> # Time series climate source from CSV
+    >>> climate_data = pd.read_csv('weather.csv', parse_dates=['date'])
+    >>> climate_source = hs.TimeSeriesClimateSource(
+    ...     data=climate_data,
+    ...     date_col='date',
+    ...     precip_col='precip_mm',
+    ...     tmax_col='temp_max_c', 
+    ...     tmin_col='temp_min_c',
+    ...     solar_col='solar_mj'
+    ... )
+    >>> 
+    >>> # Stochastic weather generator (WGEN)
+    >>> wgen_params = hs.WGENParams.from_csv('wgen_params.csv')
+    >>> wgen_source = hs.WGENClimateSource(
+    ...     params=wgen_params,
+    ...     seed=42  # for reproducible results
+    ... )
+    >>> 
+    >>> # Use with climate engine
+    >>> site_config = hs.SiteConfig(latitude=40.0, elevation=1000.0)
+    >>> climate_engine = hs.ClimateEngine(
+    ...     source=climate_source,
+    ...     site_config=site_config,
+    ...     start_date=datetime(2020, 1, 1)
+    ... )
+
+Climate Data Requirements:
+    - Precipitation: mm/day
+    - Maximum Temperature: °C
+    - Minimum Temperature: °C  
+    - Solar Radiation: MJ/m²/day
+
+Both time series and WGEN sources provide the same interface and can be
+used interchangeably for historical analysis or stochastic planning.
 """
 
 from abc import ABC, abstractmethod

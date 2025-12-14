@@ -2,7 +2,39 @@
 Results output system for HydroSim simulations.
 
 The results writer provides structured output of simulation results in
-CSV or JSON format for time series analysis.
+CSV or JSON format for time series analysis. It captures all key simulation
+outputs including flows, storage levels, demand deficits, and inflows.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Run simulation
+    >>> engine = hs.SimulationEngine(network, climate_engine)
+    >>> results = engine.run(start_date='2020-01-01', end_date='2020-12-31')
+    >>> 
+    >>> # Create results writer
+    >>> writer = hs.ResultsWriter(results, output_dir='output/')
+    >>> 
+    >>> # Write all results to CSV files
+    >>> writer.write_all_csv()
+    >>> 
+    >>> # Or write specific components
+    >>> writer.write_flows_csv('flows.csv')
+    >>> writer.write_storage_csv('storage.csv')
+    >>> writer.write_demands_csv('demands.csv')
+    >>> 
+    >>> # Export to JSON for programmatic analysis
+    >>> writer.write_json('results.json')
+
+Output Files:
+    - flows.csv: Daily flow values for all links
+    - storage.csv: Daily storage volumes for all StorageNodes  
+    - demands.csv: Daily demand and deficit values for all DemandNodes
+    - inflows.csv: Daily inflow values for all SourceNodes
+    - results.json: Complete results in structured JSON format
+
+All outputs include timestamps and are suitable for time series analysis
+and visualization tools.
 """
 
 import csv

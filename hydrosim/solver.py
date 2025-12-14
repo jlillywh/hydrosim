@@ -2,7 +2,34 @@
 Network solver abstractions for optimization.
 
 The solver performs minimum cost network flow optimization to allocate
-water across the system.
+water across the system. It uses linear programming to find optimal flows
+that minimize cost while satisfying all physical and operational constraints.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Create network solver (default is LinearProgrammingSolver)
+    >>> solver = hs.LinearProgrammingSolver()
+    >>> 
+    >>> # Or use lookahead solver for better storage decisions
+    >>> lookahead_solver = hs.LookaheadSolver(
+    ...     base_solver=hs.LinearProgrammingSolver(),
+    ...     lookahead_days=30,
+    ...     hedging_factor=0.8
+    ... )
+    >>> 
+    >>> # Solver is used automatically by SimulationEngine
+    >>> engine = hs.SimulationEngine(network, climate_engine, solver)
+    >>> results = engine.run(start_date='2020-01-01', end_date='2020-12-31')
+
+Cost Hierarchy:
+    The solver uses a cost hierarchy to prioritize water allocation:
+    - COST_DEMAND (-1000): Meeting demands has highest priority
+    - COST_STORAGE (-1): Storing water has medium priority  
+    - COST_SPILL (0): Spilling water has lowest priority
+
+This ensures demands are met first, excess water is stored when possible,
+and only spilled when storage is full.
 """
 
 from abc import ABC, abstractmethod

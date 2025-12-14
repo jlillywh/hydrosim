@@ -1,7 +1,41 @@
 """
 Control system abstractions for link flow management.
 
-Controls allow modeling of operational rules and automated control logic.
+Controls allow modeling of operational rules and automated control logic
+that modify link capacities based on system state. They enable realistic
+representation of operational policies and physical constraints.
+
+Example:
+    >>> import hydrosim as hs
+    >>> 
+    >>> # Create nodes
+    >>> reservoir = hs.StorageNode('reservoir', capacity=1000)
+    >>> city = hs.DemandNode('city', demand_strategy=hs.MunicipalDemand(50))
+    >>> 
+    >>> # Create link with control
+    >>> pipeline = hs.Link('pipeline', reservoir, city, 
+    ...                    physical_capacity=100, cost=0.01)
+    >>> 
+    >>> # Add fractional control (reduce capacity to 80%)
+    >>> pipeline.control = hs.FractionalControl(fraction=0.8)
+    >>> 
+    >>> # Add absolute control (limit to 60 units regardless of capacity)
+    >>> pipeline.control = hs.AbsoluteControl(limit=60.0)
+    >>> 
+    >>> # Add switch control (on/off based on storage level)
+    >>> pipeline.control = hs.SwitchControl(
+    ...     reference_node=reservoir,
+    ...     threshold=200.0,
+    ...     above_threshold=True  # on when storage > 200
+    ... )
+
+Available Controls:
+    - FractionalControl: Scale capacity by a fraction (0.0 to 1.0)
+    - AbsoluteControl: Set absolute capacity limit
+    - SwitchControl: Binary on/off based on node state
+    
+Controls are evaluated each timestep and can represent operational
+policies, physical constraints, or automated control systems.
 """
 
 from abc import ABC, abstractmethod
