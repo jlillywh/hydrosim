@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 from hydrosim.climate import ClimateState
 from hydrosim.nodes import SourceNode
-from hydrosim.strategies import TimeSeriesStrategy, HydrologyStrategy
+from hydrosim.strategies import TimeSeriesStrategy, HydrologyStrategy, AWBMGeneratorStrategy
 
 
 def create_test_climate(precip: float = 10.0, t_max: float = 25.0, 
@@ -137,6 +137,116 @@ def test_strategy_switching():
     
     # Should produce different result
     assert inflow2 != inflow1
+
+
+def test_source_node_with_awbm_strategy():
+    """
+    Test SourceNode with AWBMGeneratorStrategy.
+    Validates Requirements 1.5, 3.4: AWBM strategy integrates with SourceNode.
+    """
+    # Create AWBM strategy with valid parameters
+    catchment_area = 5.0e7  # 50 km² in m²
+    strategy = AWBMGeneratorStrategy(
+        catchment_area=catchment_area,
+        a1=134.0, a2=433.0, a3=433.0,  # Store capacities (mm)
+        f1=0.3, f2=0.3, f3=0.4,        # Partial area fractions
+        bfi=0.35,                       # Baseflow Index
+        k_base=0.95,                    # Recession constant
+        initial_storage=0.5             # Initial saturation
+    )
+    
+    # Create source node
+    node = SourceNode("awbm_source", generator=strategy)
+    
+    # Test with precipitation and ET0
+    climate = create_test_climate(precip=25.0, et0=5.0)
+    node.step(climate)
+    
+    # Should generate some inflow (volume in m³)
+    assert node.inflow >= 0.0
+    assert isinstance(node.inflow, float)
+    
+    # Test state is accessible
+    state = node.get_state()
+    assert 'inflow' in state
+    assert state['inflow'] == node.inflow
+
+
+def test_awbm_strategy_instantiation_and_methods():
+    """
+    Test AWBM strategy instantiation and method calls.
+    Validates Requirements 1.5, 3.4: Strategy follows GeneratorStrategy interface.
+    """
+    # Test valid parameter instantiation
+    strategy = AWBMGeneratorStrategy(
+        catchment_area=1.0e6,  # 1 km²
+        a1=100.0, a2=200.0, a3=300.0,
+        f1=0.4, f2=0.3, f3=0.3,
+        bfi=0.4,
+        k_base=0.9,
+        initial_storage=0.3
+    )
+    
+    # Test generate method interface
+    climate = create_test_climate(precip=15.0, et0=3.0)
+    volume = strategy.generate(climate)
+    
+    # Should return a float volume
+    assert isinstance(volume, float)
+    assert volume >= 0.0
+    
+    # Test reset method
+    strategy.reset()
+    
+    # After reset, should still be able to generate
+    volume_after_reset = strategy.generate(climate)
+    assert isinstance(volume_after_reset, float)
+    assert volume_after_reset >= 0.0
+
+
+def test_awbm_strategy_parameter_validation():
+    """
+    Test AWBM strategy parameter validation.
+    Validates Requirements 3.5, 4.4, 5.4: Parameter validation enforcement.
+    """
+    # Test invalid partial area fractions (don't sum to 1.0)
+    try:
+        AWBMGeneratorStrategy(
+            catchment_area=1.0e6,
+            a1=100.0, a2=200.0, a3=300.0,
+            f1=0.4, f2=0.4, f3=0.4,  # Sum = 1.2, should fail
+            bfi=0.4,
+            k_base=0.9
+        )
+        assert False, "Should have raised ValueError for invalid partial areas"
+    except ValueError as e:
+        assert "sum to 1.0" in str(e)
+    
+    # Test negative catchment area
+    try:
+        AWBMGeneratorStrategy(
+            catchment_area=-1000.0,  # Negative, should fail
+            a1=100.0, a2=200.0, a3=300.0,
+            f1=0.3, f2=0.3, f3=0.4,
+            bfi=0.4,
+            k_base=0.9
+        )
+        assert False, "Should have raised ValueError for negative catchment area"
+    except ValueError as e:
+        assert "positive" in str(e)
+    
+    # Test invalid BFI (outside 0-1 range)
+    try:
+        AWBMGeneratorStrategy(
+            catchment_area=1.0e6,
+            a1=100.0, a2=200.0, a3=300.0,
+            f1=0.3, f2=0.3, f3=0.4,
+            bfi=1.5,  # > 1.0, should fail
+            k_base=0.9
+        )
+        assert False, "Should have raised ValueError for invalid BFI"
+    except ValueError as e:
+        assert "Baseflow Index" in str(e)
 
 
 def test_inflow_available_for_solver():

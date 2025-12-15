@@ -54,7 +54,7 @@ from hydrosim.climate import SiteConfig
 from hydrosim.solver import COST_DEMAND, COST_STORAGE, COST_SPILL
 from hydrosim.climate_sources import ClimateSource, TimeSeriesClimateSource, WGENClimateSource
 from hydrosim.strategies import (
-    TimeSeriesStrategy, HydrologyStrategy, 
+    TimeSeriesStrategy, HydrologyStrategy, AWBMGeneratorStrategy,
     MunicipalDemand, AgricultureDemand
 )
 from hydrosim.controls import FractionalControl, AbsoluteControl, SwitchControl
@@ -905,6 +905,8 @@ class YAMLParser:
             strategy = self._parse_timeseries_strategy(node_id, node_params)
         elif strategy_type == 'hydrology':
             strategy = self._parse_hydrology_strategy(node_id, node_params)
+        elif strategy_type == 'awbm':
+            strategy = self._parse_awbm_strategy(node_id, node_params)
         else:
             raise ValueError(f"Unknown generator strategy for {node_id}: {strategy_type}")
         
@@ -941,6 +943,100 @@ class YAMLParser:
             raise ValueError(f"HydrologyStrategy for {node_id} requires 'area'")
         
         return HydrologyStrategy(snow17_params, awbm_params, area)
+    
+    def _parse_awbm_strategy(self, node_id: str, node_params: Dict[str, Any]) -> AWBMGeneratorStrategy:
+        """
+        Parse AWBM generator strategy configuration.
+        
+        Args:
+            node_id: Node identifier for error messages
+            node_params: Node parameters dictionary from YAML
+            
+        Returns:
+            AWBMGeneratorStrategy instance
+            
+        Raises:
+            ValueError: If required parameters are missing or invalid
+        """
+        # Extract required catchment area
+        try:
+            area = float(node_params['area'])
+            if area <= 0:
+                raise ValueError(f"AWBM strategy for {node_id}: area must be positive, got {area}")
+        except KeyError:
+            raise ValueError(f"AWBM strategy for {node_id} requires 'area' parameter")
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"AWBM strategy for {node_id}: invalid area value - {e}")
+        
+        # Extract parameters dictionary
+        parameters = node_params.get('parameters', {})
+        if not parameters:
+            raise ValueError(f"AWBM strategy for {node_id} requires 'parameters' section")
+        
+        # Extract required AWBM parameters with validation
+        try:
+            # Surface store capacities (mm)
+            a1 = float(parameters['A1'])
+            a2 = float(parameters['A2']) 
+            a3 = float(parameters['A3'])
+            
+            # Partial area fractions (must sum to 1.0)
+            f1 = float(parameters['f1'])
+            f2 = float(parameters['f2'])
+            f3 = float(parameters['f3'])
+            
+            # Flow partitioning parameters
+            bfi = float(parameters['BFI'])
+            k_base = float(parameters['K_base'])
+            
+        except KeyError as e:
+            raise ValueError(f"AWBM strategy for {node_id} missing required parameter: {e}")
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"AWBM strategy for {node_id} has invalid parameter value: {e}")
+        
+        # Extract optional initial_storage parameter (handled separately from AWBMParameters)
+        initial_storage = parameters.get('initial_storage', 0.5)
+        try:
+            initial_storage = float(initial_storage)
+            if not (0.0 <= initial_storage <= 1.0):
+                raise ValueError(f"initial_storage must be between 0.0 and 1.0, got {initial_storage}")
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"AWBM strategy for {node_id}: invalid initial_storage - {e}")
+        
+        # Validate parameter ranges before creating strategy
+        try:
+            # Validate positive capacities
+            if any(x <= 0 for x in [a1, a2, a3]):
+                raise ValueError("Store capacities (A1, A2, A3) must be positive")
+            
+            # Validate partial area fractions
+            if not (0 <= f1 <= 1 and 0 <= f2 <= 1 and 0 <= f3 <= 1):
+                raise ValueError("Partial area fractions (f1, f2, f3) must be between 0 and 1")
+            
+            if abs(f1 + f2 + f3 - 1.0) > 1e-6:
+                raise ValueError(f"Partial area fractions must sum to 1.0, got {f1 + f2 + f3:.6f}")
+            
+            # Validate BFI and recession constant
+            if not (0 <= bfi <= 1):
+                raise ValueError(f"Baseflow Index (BFI) must be between 0 and 1, got {bfi}")
+            
+            if not (0 <= k_base <= 1):
+                raise ValueError(f"Recession constant (K_base) must be between 0 and 1, got {k_base}")
+                
+        except ValueError as e:
+            raise ValueError(f"AWBM strategy for {node_id}: {e}")
+        
+        # Create and return AWBMGeneratorStrategy instance
+        try:
+            return AWBMGeneratorStrategy(
+                catchment_area=area,
+                a1=a1, a2=a2, a3=a3,
+                f1=f1, f2=f2, f3=f3,
+                bfi=bfi, k_base=k_base,
+                initial_storage=initial_storage
+            )
+        except Exception as e:
+            raise ValueError(f"Failed to create AWBM strategy for {node_id}: {e}")
     
     def _parse_demand_node(self, node_id: str, node_params: Dict[str, Any]) -> DemandNode:
         """Parse demand node configuration."""

@@ -1,0 +1,87 @@
+# AWBM Integration Example Configuration
+# This example demonstrates how to configure an AWBM rainfall-runoff model
+# as a source node in HydroSim
+
+model_name: "AWBM Integration Example"
+author: "HydroSim User"
+
+# Climate configuration - using time series data
+climate:
+  source_type: timeseries
+  filepath: climate_data.csv  # Should contain columns: date, precip, t_max, t_min, solar
+  site:
+    latitude: 45.0    # degrees
+    elevation: 1000.0 # meters
+
+# Simulation configuration
+simulation:
+  start_date: "2024-01-01"
+  num_timesteps: 365
+
+# Network nodes
+nodes:
+  # AWBM source node - generates inflow using rainfall-runoff modeling
+  catchment_inflow:
+    type: source
+    strategy: awbm
+    area: 5.0e7  # Catchment area: 50 km² in square meters (scientific notation)
+    parameters:
+      # Surface store capacities (mm)
+      A1: 134.0   # Store 1 capacity
+      A2: 433.0   # Store 2 capacity  
+      A3: 433.0   # Store 3 capacity
+      
+      # Partial area fractions (must sum to 1.0)
+      f1: 0.3     # Fraction of catchment represented by store 1
+      f2: 0.3     # Fraction of catchment represented by store 2
+      f3: 0.4     # Fraction of catchment represented by store 3
+      
+      # Flow partitioning parameters
+      BFI: 0.35       # Baseflow Index (0.0 to 1.0)
+      K_base: 0.95    # Baseflow recession constant (0.0 to 1.0)
+      
+      # Optional: Initial storage saturation (0.0 to 1.0, default: 0.5)
+      initial_storage: 0.5
+
+  # Storage reservoir
+  reservoir:
+    type: storage
+    initial_storage: 500.0  # m³
+    max_storage: 2000.0     # m³
+    min_storage: 0.0        # m³
+    eav_table:
+      elevations: [100.0, 105.0, 110.0, 115.0, 120.0]  # meters
+      areas: [0.0, 1000.0, 2000.0, 3000.0, 4000.0]     # m²
+      volumes: [0.0, 500.0, 1000.0, 1500.0, 2000.0]    # m³
+
+  # Municipal demand
+  city:
+    type: demand
+    demand_type: municipal
+    population: 10000        # people
+    per_capita_demand: 0.3   # m³/person/day
+
+# Network links
+links:
+  # Inflow from catchment to reservoir
+  inflow_link:
+    source: catchment_inflow
+    target: reservoir
+    capacity: 1000.0  # m³/day
+    cost: 1.0
+
+  # Supply from reservoir to city
+  supply_link:
+    source: reservoir
+    target: city
+    capacity: 500.0   # m³/day
+    cost: 10.0        # Higher cost for demand satisfaction
+
+# Visualization configuration (optional)
+visualization:
+  layout: hierarchical
+  node_colors:
+    source: lightgreen
+    storage: lightblue
+    demand: lightyellow
+  show_labels: true

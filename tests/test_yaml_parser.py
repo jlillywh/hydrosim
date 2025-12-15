@@ -914,3 +914,372 @@ def test_wgen_csv_file_not_found_absolute_path(temp_config_dir):
     parser = YAMLParser(str(config_path))
     with pytest.raises(FileNotFoundError):
         parser.parse()
+
+
+def test_awbm_strategy_parsing(temp_config_dir, sample_climate_csv):
+    """Test parsing of AWBM strategy configuration."""
+    config_path = temp_config_dir / "awbm_config.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,  # 50 km² in m²
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 0.35,
+                    'K_base': 0.95,
+                    'initial_storage': 0.5
+                }
+            },
+            'junction': {
+                'type': 'junction'
+            }
+        },
+        'links': {
+            'link1': {
+                'source': 'awbm_source',
+                'target': 'junction',
+                'capacity': 1000.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    network, climate_source, site_config = parser.parse()
+    
+    # Verify network structure
+    assert len(network.nodes) == 2
+    assert len(network.links) == 1
+    
+    # Verify AWBM source node
+    awbm_node = network.nodes['awbm_source']
+    assert isinstance(awbm_node, SourceNode)
+    
+    # Import AWBMGeneratorStrategy for type checking
+    from hydrosim.strategies import AWBMGeneratorStrategy
+    assert isinstance(awbm_node.generator, AWBMGeneratorStrategy)
+    
+    # Verify AWBM parameters
+    strategy = awbm_node.generator
+    assert strategy.catchment_area == 5.0e7
+    assert strategy.parameters.a1 == 134.0
+    assert strategy.parameters.a2 == 433.0
+    assert strategy.parameters.a3 == 433.0
+    assert strategy.parameters.f1 == 0.3
+    assert strategy.parameters.f2 == 0.3
+    assert strategy.parameters.f3 == 0.4
+    assert strategy.parameters.bfi == 0.35
+    assert strategy.parameters.k_base == 0.95
+    assert strategy.initial_storage == 0.5
+
+
+def test_awbm_strategy_missing_area(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with missing area parameter."""
+    config_path = temp_config_dir / "awbm_missing_area.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                # Missing 'area' parameter
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 0.35,
+                    'K_base': 0.95
+                }
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="requires 'area' parameter"):
+        parser.parse()
+
+
+def test_awbm_strategy_missing_parameters(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with missing parameters section."""
+    config_path = temp_config_dir / "awbm_missing_params.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7
+                # Missing 'parameters' section
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="requires 'parameters' section"):
+        parser.parse()
+
+
+def test_awbm_strategy_invalid_partial_areas(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with invalid partial area fractions."""
+    config_path = temp_config_dir / "awbm_invalid_areas.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.5,  # Sum = 1.1, should be 1.0
+                    'BFI': 0.35,
+                    'K_base': 0.95
+                }
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="must sum to 1.0"):
+        parser.parse()
+
+
+def test_awbm_strategy_invalid_bfi(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with invalid BFI value."""
+    config_path = temp_config_dir / "awbm_invalid_bfi.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 1.5,  # Invalid: > 1.0
+                    'K_base': 0.95
+                }
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="Baseflow Index.*must be between 0 and 1"):
+        parser.parse()
+
+
+def test_awbm_strategy_missing_required_parameter(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with missing required parameter."""
+    config_path = temp_config_dir / "awbm_missing_param.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    # Missing 'A3'
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 0.35,
+                    'K_base': 0.95
+                }
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="missing required parameter.*A3"):
+        parser.parse()
+
+
+def test_awbm_strategy_default_initial_storage(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with default initial_storage value."""
+    config_path = temp_config_dir / "awbm_default_storage.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 0.35,
+                    'K_base': 0.95
+                    # No initial_storage specified - should default to 0.5
+                }
+            },
+            'junction': {
+                'type': 'junction'
+            }
+        },
+        'links': {
+            'link1': {
+                'source': 'awbm_source',
+                'target': 'junction',
+                'capacity': 1000.0,
+                'cost': 1.0
+            }
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    network, climate_source, site_config = parser.parse()
+    
+    # Verify default initial_storage value
+    awbm_node = network.nodes['awbm_source']
+    assert awbm_node.generator.initial_storage == 0.5
+
+
+def test_awbm_strategy_invalid_initial_storage(temp_config_dir, sample_climate_csv):
+    """Test AWBM strategy parsing with invalid initial_storage value."""
+    config_path = temp_config_dir / "awbm_invalid_storage.yaml"
+    
+    config = {
+        'climate': {
+            'source_type': 'timeseries',
+            'filepath': str(sample_climate_csv),
+            'site': {
+                'latitude': 45.0,
+                'elevation': 1000.0
+            }
+        },
+        'nodes': {
+            'awbm_source': {
+                'type': 'source',
+                'strategy': 'awbm',
+                'area': 5.0e7,
+                'parameters': {
+                    'A1': 134.0,
+                    'A2': 433.0,
+                    'A3': 433.0,
+                    'f1': 0.3,
+                    'f2': 0.3,
+                    'f3': 0.4,
+                    'BFI': 0.35,
+                    'K_base': 0.95,
+                    'initial_storage': 1.5  # Invalid: > 1.0
+                }
+            }
+        },
+        'links': {}
+    }
+    
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
+    
+    parser = YAMLParser(str(config_path))
+    with pytest.raises(ValueError, match="initial_storage must be between 0.0 and 1.0"):
+        parser.parse()
