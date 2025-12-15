@@ -26,7 +26,7 @@ Main Components:
     - Configuration: YAMLParser, NetworkGraph
 """
 
-__version__ = "0.4.3"
+__version__ = "0.4.4"
 
 from hydrosim.climate import ClimateState, SiteConfig
 from hydrosim.config import ElevationAreaVolume, NetworkGraph, YAMLParser
