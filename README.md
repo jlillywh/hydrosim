@@ -451,6 +451,232 @@ See the `examples/` directory for complete working examples:
 - `wgen_example.yaml` - YAML configuration using CSV parameters
 - `wgen_example.py` - Python script demonstrating WGEN simulation
 
+## AWBM Rainfall-Runoff Modeling
+
+HydroSim includes the AWBM (Australian Water Balance Model) for conceptual rainfall-runoff simulation. AWBM converts daily precipitation and evapotranspiration into streamflow using a three-store surface water balance approach.
+
+### Why Use AWBM?
+
+AWBM is useful when you need to:
+- Convert rainfall to streamflow for ungauged catchments
+- Model catchment hydrology with limited data requirements
+- Simulate the effects of climate variability on water resources
+- Represent spatial variability in catchment response
+- Integrate rainfall-runoff processes with water supply systems
+
+### Model Structure
+
+AWBM uses a conceptual approach with:
+
+**Three Surface Stores**: Each representing different parts of the catchment
+- **Store 1 (A1)**: Quick-responding areas (e.g., urban, rocky surfaces)
+- **Store 2 (A2)**: Medium-responding areas (e.g., shallow soils)
+- **Store 3 (A3)**: Slow-responding areas (e.g., deep soils, vegetation)
+
+**Partial Area Concept**: Each store represents a fraction of the total catchment
+- **f1, f2, f3**: Partial area fractions (must sum to 1.0)
+
+**Flow Partitioning**: Excess water is split between surface runoff and baseflow
+- **BFI**: Baseflow Index (0.0 = all surface runoff, 1.0 = all baseflow)
+- **K_base**: Baseflow recession constant (controls baseflow decay rate)
+
+### Mathematical Formulation
+
+For each timestep and each surface store i:
+
+```
+Store_i(t+1) = min(A_i, max(0, Store_i(t) + Precip - ET0))
+Excess_i = max(0, Store_i(t) + Precip - ET0 - A_i) * f_i
+```
+
+Flow partitioning:
+```
+Total_Excess = Excess_1 + Excess_2 + Excess_3
+Surface_Runoff = Total_Excess * (1 - BFI)
+Baseflow_Input = Total_Excess * BFI
+```
+
+Baseflow recession:
+```
+Baseflow_Output = Baseflow_Store * (1 - K_base)
+Baseflow_Store = Baseflow_Store * K_base + Baseflow_Input
+Total_Runoff = Surface_Runoff + Baseflow_Output
+```
+
+### YAML Configuration
+
+Configure AWBM as a source node strategy in your network:
+
+```yaml
+nodes:
+  catchment_inflow:
+    type: source
+    strategy: awbm
+    area: 5.0e7  # Catchment area in m² (50 km²)
+    parameters:
+      # Surface store capacities (mm)
+      A1: 134.0   # Store 1 capacity
+      A2: 433.0   # Store 2 capacity  
+      A3: 433.0   # Store 3 capacity
+      
+      # Partial area fractions (must sum to 1.0)
+      f1: 0.3     # Fraction for store 1
+      f2: 0.3     # Fraction for store 2
+      f3: 0.4     # Fraction for store 3
+      
+      # Flow partitioning parameters
+      BFI: 0.35       # Baseflow Index (0.0 to 1.0)
+      K_base: 0.95    # Baseflow recession constant
+      
+      # Optional: Initial storage saturation (default: 0.5)
+      initial_storage: 0.5
+```
+
+### Programmatic Usage
+
+Create and use AWBM directly in Python:
+
+```python
+from hydrosim import AWBMGeneratorStrategy, SourceNode, ClimateState
+
+# Create AWBM strategy
+awbm = AWBMGeneratorStrategy(
+    area=5.0e7,  # 50 km² in m²
+    A1=134.0, A2=433.0, A3=433.0,  # Store capacities (mm)
+    f1=0.3, f2=0.3, f3=0.4,        # Partial area fractions
+    BFI=0.35,                       # Baseflow index
+    K_base=0.95,                    # Baseflow recession
+    initial_storage=0.5             # Initial saturation
+)
+
+# Create source node with AWBM
+source = SourceNode('catchment', awbm)
+
+# Use in simulation with climate data
+climate = ClimateState(
+    precip=15.0,    # mm/day
+    tmax=25.0,      # °C
+    tmin=10.0,      # °C
+    solar=20.0      # MJ/m²/day
+)
+
+# Generate inflow for the timestep
+inflow = source.step(climate)  # Returns inflow in m³/day
+```
+
+### Parameter Guidelines
+
+#### Typical Parameter Ranges
+
+**Surface Store Capacities (mm)**:
+- **A1**: 50-200 mm (quick response, small capacity)
+- **A2**: 200-600 mm (medium response)
+- **A3**: 200-800 mm (slow response, large capacity)
+
+**Partial Area Fractions**:
+- **f1**: 0.1-0.4 (typically 0.2-0.3)
+- **f2**: 0.2-0.4 (typically 0.3-0.4)
+- **f3**: 0.2-0.6 (typically 0.3-0.5)
+- **Constraint**: f1 + f2 + f3 = 1.0
+
+**Flow Partitioning**:
+- **BFI**: 0.1-0.7 (higher for groundwater-dominated catchments)
+- **K_base**: 0.9-0.99 (higher values = slower baseflow recession)
+
+#### Calibration Strategy
+
+1. **Start with literature values** for similar catchments and climate zones
+2. **Adjust store capacities** to match total runoff volume
+3. **Tune BFI** to match baseflow vs. surface runoff proportions
+4. **Adjust K_base** to match baseflow recession characteristics
+5. **Fine-tune partial areas** to match hydrograph shape and timing
+
+#### Climate Zone Guidelines
+
+**Arid/Semi-Arid Regions**:
+- Lower store capacities (A1: 50-100, A2: 150-300, A3: 200-400)
+- Lower BFI (0.1-0.3)
+- Higher f1 (more quick response)
+
+**Temperate Regions**:
+- Medium store capacities (A1: 100-150, A2: 300-500, A3: 400-600)
+- Medium BFI (0.3-0.5)
+- Balanced partial areas
+
+**Humid/Tropical Regions**:
+- Higher store capacities (A1: 150-200, A2: 400-600, A3: 500-800)
+- Higher BFI (0.4-0.7)
+- Higher f3 (more slow response)
+
+### Integration with Climate Data
+
+AWBM automatically integrates with HydroSim's climate system:
+
+**Required Climate Variables**:
+- **precip**: Daily precipitation (mm/day)
+- **tmax, tmin**: Daily maximum and minimum temperature (°C)
+- **solar**: Daily solar radiation (MJ/m²/day) - optional, calculated if missing
+
+**ET0 Calculation**: AWBM uses the Hargreaves method to calculate reference evapotranspiration from temperature and solar radiation data.
+
+**Climate Sources**: Works with both time series and WGEN stochastic climate data.
+
+### Mass Balance and Validation
+
+AWBM maintains strict mass balance conservation:
+
+```python
+# Check mass balance
+awbm_strategy = source.strategy
+summary = awbm_strategy.get_mass_balance_summary()
+
+print(f"Total Input: {summary['total_input']:.2f} mm")
+print(f"Total Output: {summary['total_output']:.2f} mm")
+print(f"Storage Change: {summary['storage_change']:.2f} mm")
+print(f"Mass Balance Error: {summary['error']:.6f} mm")
+```
+
+**Validation Tools**:
+- `get_state_summary()`: Current store levels and statistics
+- `get_mass_balance_summary()`: Cumulative mass balance verification
+- `check_numerical_stability()`: Stability diagnostics
+
+### Example Files
+
+See the `examples/` directory for complete working examples:
+- `awbm_example.yaml` - Complete YAML configuration with AWBM
+- `awbm_integration_demo.py` - Comprehensive Python demonstration
+- `AWBM_INTEGRATION_README.md` - Detailed technical documentation
+
+### Troubleshooting
+
+**Common Issues**:
+
+1. **Parameter validation errors**: Ensure f1 + f2 + f3 = 1.0 exactly
+2. **Missing climate data**: Verify climate CSV has required columns
+3. **Unit conversion**: Catchment area must be in square meters
+4. **Unrealistic results**: Check parameter ranges against guidelines
+
+**Debugging Tools**:
+
+```python
+# Get detailed state information
+state = awbm_strategy.get_state_summary()
+print(f"Store levels: {state['store_levels']}")
+print(f"Baseflow store: {state['baseflow_store']:.2f} mm")
+
+# Check for numerical issues
+stability = awbm_strategy.check_numerical_stability()
+if not stability['stable']:
+    print(f"Stability warning: {stability['message']}")
+```
+
+### References
+
+- Boughton, W. (2004). The Australian water balance model. Environmental Modelling & Software, 19(10), 943-956.
+- eWater Source Documentation: AWBM Rainfall Runoff Model
+- Zhang, L., et al. (2008). Runoff and soil moisture responses to rainfall, land use and topography in subtropical catchments. Hydrological Processes, 22(12), 1752-1765.
+
 ## Core Abstractions
 
 ### Nodes
@@ -458,7 +684,7 @@ Represent locations in the water network that handle vertical physics (environme
 - `Node` - Abstract base class
 - `StorageNode` - Reservoir with active drawdown and refill capabilities
 - `JunctionNode` - Stateless connection point
-- `SourceNode` - Water source with pluggable generation strategies
+- `SourceNode` - Water source with pluggable generation strategies (including AWBM)
 - `DemandNode` - Water demand with pluggable demand models
 
 ### Links
@@ -477,6 +703,7 @@ Manages temporal and climatic context:
 ### Strategies
 Pluggable algorithms for generation and demand:
 - `GeneratorStrategy` - Abstract base for inflow generation
+- `AWBMGeneratorStrategy` - Australian Water Balance Model for rainfall-runoff simulation
 - `DemandModel` - Abstract base for demand calculation
 
 ### Controls
@@ -575,6 +802,80 @@ files = writer.write_all(prefix="simulation")
 print(f"Results written to: {files}")
 ```
 
+### Option 2b: AWBM Rainfall-Runoff Example
+
+Create a catchment-to-reservoir system using AWBM for rainfall-runoff modeling:
+
+```python
+import hydrosim
+from datetime import datetime
+import pandas as pd
+import numpy as np
+
+# Create sample climate data
+dates = pd.date_range('2024-01-01', periods=30, freq='D')
+climate_data = pd.DataFrame({
+    'date': dates,
+    'precip': np.random.exponential(5.0, 30),  # mm/day
+    'tmax': 20 + 10 * np.sin(np.arange(30) * 2 * np.pi / 365) + np.random.normal(0, 2, 30),
+    'tmin': 10 + 8 * np.sin(np.arange(30) * 2 * np.pi / 365) + np.random.normal(0, 1.5, 30),
+    'solar': 15 + 5 * np.sin(np.arange(30) * 2 * np.pi / 365) + np.random.normal(0, 1, 30)
+})
+climate_data.to_csv('climate_data.csv', index=False)
+
+# Create network with AWBM catchment
+network = hydrosim.NetworkGraph()
+
+# Create AWBM source node
+awbm_strategy = hydrosim.AWBMGeneratorStrategy(
+    area=5.0e7,  # 50 km² catchment
+    A1=134.0, A2=433.0, A3=433.0,  # Store capacities (mm)
+    f1=0.3, f2=0.3, f3=0.4,        # Partial area fractions
+    BFI=0.35,                       # Baseflow index
+    K_base=0.95                     # Baseflow recession
+)
+catchment = hydrosim.SourceNode('catchment', awbm_strategy)
+network.add_node(catchment)
+
+# Add reservoir and demand (same as before)
+eav = hydrosim.ElevationAreaVolume(
+    elevations=[100.0, 110.0, 120.0],
+    areas=[1000.0, 2000.0, 3000.0],
+    volumes=[0.0, 10000.0, 30000.0]
+)
+reservoir = hydrosim.StorageNode('reservoir', initial_storage=20000.0, eav_table=eav)
+demand = hydrosim.DemandNode('city', hydrosim.MunicipalDemand(population=10000, per_capita_demand=0.2))
+network.add_node(reservoir)
+network.add_node(demand)
+
+# Connect with links
+inflow_link = hydrosim.Link('inflow', catchment, reservoir, physical_capacity=5000.0, cost=1.0)
+supply_link = hydrosim.Link('supply', reservoir, demand, physical_capacity=3000.0, cost=10.0)
+network.add_link(inflow_link)
+network.add_link(supply_link)
+
+# Set up and run simulation
+climate_engine = hydrosim.ClimateEngine(
+    climate_source=hydrosim.TimeSeriesClimateSource('climate_data.csv'),
+    site_config=hydrosim.SiteConfig(latitude=45.0, elevation=1000.0),
+    start_date=datetime(2024, 1, 1)
+)
+solver = hydrosim.LinearProgrammingSolver()
+engine = hydrosim.SimulationEngine(network, climate_engine, solver)
+
+# Run simulation and capture results
+writer = hydrosim.ResultsWriter(output_dir="output", format="csv")
+for day in range(30):
+    result = engine.step()
+    writer.add_timestep(result)
+
+# Export results and check AWBM mass balance
+files = writer.write_all(prefix="awbm_simulation")
+mass_balance = awbm_strategy.get_mass_balance_summary()
+print(f"Results written to: {files}")
+print(f"AWBM Mass Balance Error: {mass_balance['error']:.6f} mm")
+```
+
 ### Option 3: Using YAML Configuration (Recommended for Projects)
 
 Create your own water network using YAML configuration (requires example files from the repository):
@@ -664,6 +965,7 @@ pip install hydrosim
 
 # Run the examples
 python examples/quick_start.py                    # Complete workflow demo
+python examples/awbm_integration_demo.py          # AWBM rainfall-runoff modeling
 python examples/network_visualization_demo.py    # Network topology visualization
 python examples/results_visualization_demo.py    # Time series results visualization
 python examples/results_output_example.py        # Programmatic usage example
@@ -675,8 +977,10 @@ The `examples/` directory contains:
   - `complex_network.yaml` - Multi-reservoir system with controls
   - `storage_drawdown_example.yaml` - Active storage drawdown demo
   - `wgen_example.yaml` - Stochastic weather generation example
+  - `awbm_example.yaml` - AWBM rainfall-runoff modeling example
 - **Python Scripts:**
   - `quick_start.py` - Complete workflow with automatic visualization
+  - `awbm_integration_demo.py` - AWBM rainfall-runoff modeling demonstration
   - `*_demo.py` - Various feature demonstrations
   - `*_example.py` - Usage examples for specific components
 - **Data Files:**
@@ -684,6 +988,7 @@ The `examples/` directory contains:
   - `wgen_params_template.csv` - WGEN parameter template
 - **Documentation:**
   - `README.md` - Detailed configuration guide
+  - `AWBM_INTEGRATION_README.md` - AWBM rainfall-runoff modeling guide
   - `CLIMATE_BUILDER_README.md` - Climate data tools guide
 
 ### YAML Visualization Configuration
