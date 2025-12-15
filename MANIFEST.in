@@ -1,5 +1,6 @@
-# Include the README and changelog
+# Include the README and license
 include README.md
+include LICENSE
 include CHANGELOG.md
 
 # Include configuration files
